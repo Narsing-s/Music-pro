@@ -342,23 +342,23 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
         Spacer(Modifier.height(18.dp))
         Text(title, color = foreground, fontSize = 24.sp, fontWeight = FontWeight.Black, maxLines = 2)
         Text(artist, color = subtleColor, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
-        Text(album.uppercase(), color = Accent, fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.padding(top = 10.dp))
+        Text(album.uppercase(), color = accentColor, fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.padding(top = 10.dp))
         Spacer(Modifier.weight(1f))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onPrevious, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipPrevious, null, tint = Paper, modifier = Modifier.size(34.dp)) }
+            IconButton(onClick = onPrevious, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipPrevious, null, tint = foreground, modifier = Modifier.size(34.dp)) }
             Spacer(Modifier.width(18.dp))
-            Surface(onClick = onToggle, color = Paper, shape = CircleShape, modifier = Modifier.size(76.dp)) {
+            Surface(onClick = onToggle, color = foreground, shape = CircleShape, modifier = Modifier.size(76.dp)) {
                 Box(contentAlignment = Alignment.Center) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Ink, modifier = Modifier.size(42.dp)) }
             }
             Spacer(Modifier.width(18.dp))
-            IconButton(onClick = onNext, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipNext, null, tint = Paper, modifier = Modifier.size(34.dp)) }
+            IconButton(onClick = onNext, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipNext, null, tint = foreground, modifier = Modifier.size(34.dp)) }
         }
         Spacer(Modifier.height(18.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, null, tint = if (shuffle) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
-            IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = Paper, modifier = Modifier.size(30.dp)) }
-            IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Paper, modifier = Modifier.size(30.dp)) }
-            IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = Paper, modifier = Modifier.size(30.dp)) }
+            IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = foreground, modifier = Modifier.size(30.dp)) }
+            IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = foreground, modifier = Modifier.size(30.dp)) }
+            IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = foreground, modifier = Modifier.size(30.dp)) }
             IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
         }
         Spacer(Modifier.height(28.dp))
