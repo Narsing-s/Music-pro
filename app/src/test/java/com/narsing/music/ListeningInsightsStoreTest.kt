@@ -39,8 +39,6 @@ class ListeningInsightsStoreTest {
     }
 
     @Test
-    
-    @Test
     fun periodRecapCountsOnlyEventsInsideSelectedMonth() {
         val calendar = java.util.Calendar.getInstance()
         calendar.set(2026, java.util.Calendar.JANUARY, 15, 12, 0, 0)
@@ -76,6 +74,7 @@ class ListeningInsightsStoreTest {
         assertEquals("991", context.getSharedPreferences("music_pro_preferences", 0).getString("recent_ids", null))
     }
 
+    @Test
     fun clearRemovesOnlyInsightData() {
         context.getSharedPreferences("music_pro_preferences", 0).edit()
             .putString("recent_ids", "991")
