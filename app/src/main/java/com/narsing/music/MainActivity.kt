@@ -178,6 +178,30 @@ private fun MusicHome(
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = fg, unfocusedTextColor = fg, focusedBorderColor = Accent, unfocusedBorderColor = if (theme == "LIGHT") Color.LightGray else Color.DarkGray, cursorColor = Accent)
             )
+            Spacer(Modifier.height(12.dp))
+            Text("QUICK ACCESS", color = subtle, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    Triple("LIBRARY", songs.size.toString(), "TRACKS"),
+                    Triple("FAVORITES", favorites.size.toString(), "FAVORITES"),
+                    Triple("PLAYER", if (playing) "PLAYING" else "OPEN", "NOW PLAYING")
+                ).forEach { item ->
+                    Surface(
+                        modifier = Modifier.weight(1f).height(72.dp).clickable {
+                            tab = item.third
+                            showFavorites = item.third == "FAVORITES"
+                        },
+                        color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Column(Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 10.dp), verticalArrangement = Arrangement.SpaceBetween) {
+                            Text(item.first, color = subtle, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.7.sp, maxLines = 1)
+                            Text(item.second, color = fg, fontSize = 16.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("HOME", "TRACKS", "FAVORITES", "NOW PLAYING").forEach { label ->
