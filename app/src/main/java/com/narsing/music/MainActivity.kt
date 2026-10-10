@@ -585,7 +585,9 @@ private fun MusicHome(
                         }
                     }
                     val dailyMixIndices = (
-                        recentIds.mapNotNull { id -> songs.indexOfFirst { it.id == id }.takeIf { it >= 0 } +
+                        recentIds.mapNotNull { id ->
+                            songs.indexOfFirst { it.id == id }.takeIf { it >= 0 }
+                        } +
                             songs.indices.filter { songs[it].id in favorites } +
                             songs.indices.sortedByDescending { songs[it].dateAddedSeconds }.take(10)
                         ).distinct()
