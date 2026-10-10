@@ -591,19 +591,18 @@ private fun MusicHome(
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = fg, unfocusedTextColor = fg, focusedBorderColor = Accent, unfocusedBorderColor = if (theme == "LIGHT") Color.LightGray else Color.DarkGray, cursorColor = Accent)
             )
             Spacer(Modifier.height(10.dp))
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                listOf("ALL" to "All tracks", "SHORT" to "Under 3 min", "MEDIUM" to "3–6 min", "LONG" to "Over 6 min").forEach { (filter, label) ->
-                    val active = durationFilter == filter
-                    Surface(
-                        color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
-                        shape = RoundedCornerShape(50),
-                        modifier = Modifier.clickable { durationFilter = filter }.padding(vertical = 1.dp)
-                    ) {
-                        Text(label, color = if (active) Color.White else fg, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 17.dp, vertical = 12.dp))
+            if (tab == "TRACKS") {
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    listOf("ALL" to "All", "SHORT" to "<3 min", "MEDIUM" to "3–6 min", "LONG" to ">6 min").forEach { (filter, label) ->
+                        val active = durationFilter == filter
+                        Surface(color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(50), modifier = Modifier.clickable { durationFilter = filter }) {
+                            Text(label, color = if (active) Color.White else fg, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp))
+                        }
                     }
                 }
+                Spacer(Modifier.height(5.dp))
             }
-            Spacer(Modifier.height(10.dp))
+            if (tab == "HOME") {
             OutlinedButton(
                 onClick = {
                     if (songs.isNotEmpty()) {
@@ -653,15 +652,8 @@ private fun MusicHome(
             }
             Spacer(Modifier.height(14.dp))
             }
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                listOf("HOME", "TRACKS", "ALBUMS", "PLAYLISTS", "ARTISTS", "GENRES", "FOLDERS", "RECENT", "FAVORITES", "NOW PLAYING").forEach { label ->
-                    val active = tab == label
-                    Surface(color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(50), modifier = Modifier.clickable { tab = label; showFavorites = label == "FAVORITES" }) {
-                        Text(label, color = if (active) Color.White else subtle, modifier = Modifier.padding(horizontal = if (tab == "HOME") 14.dp else 12.dp, vertical = if (tab == "HOME") 10.dp else 8.dp), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp)
-                    }
-                }
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(4.dp))
             }
             if (tab == "HOME" && hasPermission) {
                 Column(Modifier.fillMaxWidth().weight(1f)) {
@@ -1183,7 +1175,13 @@ private fun MusicHome(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
                     )
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(if (showFavorites || tab == "FAVORITES") "YOUR FAVORITES" else if (tab == "RECENT") "RECENTLY PLAYED" else "LOCAL TRACKS", color = fg, fontSize = 17.sp, fontWeight = FontWeight.Black)
+                        Text("${sortedFiltered.size} songs visible · ${songs.size} in your library", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                         TextButton(onClick = { selectedTrackIds = if (selectedTrackIds.size == sortedFiltered.size) emptySet() else sortedFiltered.map { it.id }.toSet() }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)) { Text(if (selectedTrackIds.size == sortedFiltered.size && sortedFiltered.isNotEmpty()) "DESELECT" else "SELECT", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
                         if (selectedTrackIds.isNotEmpty()) {
                             Text(selectedTrackIds.size.toString(), color = fg, fontSize = 11.sp, fontWeight = FontWeight.Bold)
@@ -1255,6 +1253,27 @@ private fun MusicHome(
                             Text(formatDuration(song.durationMs), color = subtle, fontSize = 11.sp)
                         }
                         HorizontalDivider(color = Color(0xFF292929))
+                    }
+                }
+            }
+            if (tab != "NOW PLAYING") {
+                Spacer(Modifier.height(4.dp))
+                Surface(color = if (theme == "LIGHT") Color(0xFFF4F1E8) else Color(0xFF111111), shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp), modifier = Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 2.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
+                        listOf("HOME", "TRACKS", "ALBUMS", "PLAYLISTS", "ARTISTS", "GENRES", "FOLDERS", "RECENT", "FAVORITES").forEach { label ->
+                            val active = tab == label
+                            Surface(color = if (active) Accent else Color.Transparent, shape = RoundedCornerShape(11.dp), modifier = Modifier.clickable {
+                                tab = label
+                                showFavorites = label == "FAVORITES"
+                                if (label != "PLAYLISTS") activePlaylist = null
+                                if (label == "TRACKS") query = ""
+                            }) {
+                                Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(when (label) { "HOME" -> Icons.Default.Home; "TRACKS" -> Icons.Default.MusicNote; "ALBUMS" -> Icons.Default.Album; "PLAYLISTS" -> Icons.Default.QueueMusic; "ARTISTS" -> Icons.Default.Person; "GENRES" -> Icons.Default.Category; "FOLDERS" -> Icons.Default.Folder; "RECENT" -> Icons.Default.History; else -> Icons.Default.Favorite }, contentDescription = null, tint = if (active) Color.White else subtle, modifier = Modifier.size(17.dp))
+                                    Text(if (label == "FAVORITES") "Saved" else label.lowercase().replaceFirstChar { it.uppercase() }, color = if (active) Color.White else subtle, fontSize = 9.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
+                                }
+                            }
+                        }
                     }
                 }
             }
