@@ -352,6 +352,7 @@ private fun MusicHome(
     var artworkTargetLabel by remember { mutableStateOf("") }
     var artworkUris by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var insightRefreshVersion by remember { mutableIntStateOf(0) }
+    var insightPeriod by remember { mutableStateOf("ALL_TIME") }
     var albumMetadataRefreshVersion by remember { mutableIntStateOf(0) }
     var albumFilter by remember { mutableStateOf("ALL") }
     var editingAlbumName by remember { mutableStateOf<String?>(null) }
@@ -362,7 +363,7 @@ private fun MusicHome(
     var albumIsEpDraft by remember { mutableStateOf(false) }
     var activeSessionListenMs by remember(selectedIndex) { mutableLongStateOf(0L) }
     var activeSessionCounted by remember(selectedIndex) { mutableStateOf(false) }
-    val insightRows = remember(songs, insightRefreshVersion) { ListeningInsightsStore.snapshot(context, songs) }
+    val insightRows = remember(songs, insightRefreshVersion, insightPeriod) { ListeningInsightsStore.snapshotForPeriod(context, songs, insightPeriod) }
 
     val artworkPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { selectedUri ->
         val targetKey = artworkTargetKey
@@ -1043,6 +1044,22 @@ private fun MusicHome(
                         }
                     }
                     item {
+                        Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            listOf("ALL_TIME" to "All time", "THIS_MONTH" to "This month", "THIS_YEAR" to "This year").forEach { (period, label) ->
+                                val selected = insightPeriod == period
+                                TextButton(onClick = { insightPeriod = period }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)) {
+                                    Text(label, color = if (selected) Accent else subtle, fontSize = 11.sp, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)
+                                }
+                            }
+                            Spacer(Modifier.weight(1f))
+                            TextButton(onClick = {
+                                val removed = ListeningInsightsStore.optimize(context, songs.map { it.id }.toSet())
+                                insightRefreshVersion++
+                                Toast.makeText(context, "Cleaned $removed stale insight entries", Toast.LENGTH_SHORT).show()
+                            }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)) {
+                                Text("OPTIMIZE", color = subtle, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             listOf(
                                 "TRACK PLAYS" to insightRows.sumOf { it.playCount }.toString(),
