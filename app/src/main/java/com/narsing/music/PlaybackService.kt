@@ -137,8 +137,29 @@ class PlaybackService : MediaLibraryService() {
         player = ExoPlayer.Builder(this).build().apply {
             setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
             setHandleAudioBecomingNoisy(true)
+            addListener(object : Player.Listener {
+                override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                    refreshWidgetState()
+                }
+
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    refreshWidgetState()
+                }
+            })
         }
         mediaSession = MediaLibrarySession.Builder(this, player!!, libraryCallback).build()
+        refreshWidgetState()
+    }
+
+    private fun refreshWidgetState() {
+        val currentPlayer = player ?: return
+        val item = currentPlayer.currentMediaItem
+        MusicWidgetProvider.refresh(
+            this,
+            item?.mediaMetadata?.title?.toString() ?: "Choose a track",
+            item?.mediaMetadata?.artist?.toString() ?: "Your offline library",
+            currentPlayer.isPlaying
+        )
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = mediaSession
