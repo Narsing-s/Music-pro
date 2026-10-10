@@ -1672,13 +1672,24 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, album: String,
         }
         Spacer(Modifier.height(18.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onPrevious, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipPrevious, null, tint = foreground, modifier = Modifier.size(34.dp)) }
-            Spacer(Modifier.width(18.dp))
-            Surface(onClick = onToggle, color = foreground, shape = CircleShape, modifier = Modifier.size(76.dp)) {
-                Box(contentAlignment = Alignment.Center) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Ink, modifier = Modifier.size(42.dp)) }
+            IconButton(onClick = onPrevious, modifier = Modifier.size(58.dp)) {
+                Icon(Icons.Default.SkipPrevious, contentDescription = "Previous track", tint = foreground, modifier = Modifier.size(34.dp))
             }
             Spacer(Modifier.width(18.dp))
-            IconButton(onClick = onNext, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipNext, null, tint = foreground, modifier = Modifier.size(34.dp)) }
+            Surface(onClick = onToggle, color = foreground, shape = CircleShape, modifier = Modifier.size(76.dp)) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        if (playing) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (playing) "Pause playback" else "Start playback",
+                        tint = Ink,
+                        modifier = Modifier.size(42.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.width(18.dp))
+            IconButton(onClick = onNext, modifier = Modifier.size(58.dp)) {
+                Icon(Icons.Default.SkipNext, contentDescription = "Next track", tint = foreground, modifier = Modifier.size(34.dp))
+            }
         }
         Spacer(Modifier.height(18.dp))
         // Clearly labeled playback modes live in the full player, not on Home.
