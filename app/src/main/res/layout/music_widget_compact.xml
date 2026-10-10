@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:background="#101114">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <View
+            android:layout_width="3dp"
+            android:layout_height="34dp"
+            android:background="#E84B35" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="9dp">
+            <TextView
+                android:id="@+id/widget_brand"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="MUSIC PRO • NOW PLAYING"
+                android:textColor="#E84B35"
+                android:textStyle="bold"
+                android:textSize="9sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView
+                android:id="@+id/widget_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="Choose a track"
+                android:textColor="#F4F1E8"
+                android:textStyle="bold"
+                android:textSize="14sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView
+                android:id="@+id/widget_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Your offline library"
+                android:textColor="#9B9B95"
+                android:textSize="11sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="horizontal">
+        <TextView android:id="@+id/widget_shuffle" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:gravity="center" android:text="⤨" android:contentDescription="Toggle shuffle" android:textColor="#F4F1E8" android:textSize="18sp" />
+        <TextView android:id="@+id/widget_previous" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:gravity="center" android:text="|◀" android:contentDescription="Previous track" android:textColor="#F4F1E8" android:textSize="18sp" />
+        <TextView android:id="@+id/widget_play" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:gravity="center" android:text="▶" android:contentDescription="Play or pause" android:textColor="#E84B35" android:textSize="22sp" android:textStyle="bold" />
+        <TextView android:id="@+id/widget_next" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:gravity="center" android:text="▶|" android:contentDescription="Next track" android:textColor="#F4F1E8" android:textSize="18sp" />
+        <TextView android:id="@+id/widget_repeat" android:layout_width="0dp" android:layout_height="42dp" android:layout_weight="1" android:gravity="center" android:text="↻" android:contentDescription="Toggle repeat" android:textColor="#F4F1E8" android:textSize="18sp" />
+    </LinearLayout>
+</LinearLayout>
