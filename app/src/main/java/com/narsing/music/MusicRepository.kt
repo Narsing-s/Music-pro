@@ -8,7 +8,7 @@ class MusicRepository(private val context: Context) {
     fun loadSongs(): List<Song> {
         val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val metadataPrefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
-        val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.DATE_ADDED)
+        val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.DATE_ADDED, MediaStore.Audio.Media.DATA)
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         val songs = mutableListOf<Song>()
         context.contentResolver.query(collection, projection, selection, null, "${MediaStore.Audio.Media.TITLE} COLLATE NOCASE ASC")?.use { cursor ->
@@ -18,6 +18,7 @@ class MusicRepository(private val context: Context) {
             val albumCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
             val durationCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
             val dateAddedCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
+            val filePathCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idCol)
                 val title = cursor.getString(titleCol)?.takeIf { it.isNotBlank() } ?: "Unknown track"
@@ -30,7 +31,8 @@ class MusicRepository(private val context: Context) {
                     album = metadataPrefs.getString("metadata_${id}_album", album) ?: album,
                     durationMs = cursor.getLong(durationCol),
                     uri = ContentUris.withAppendedId(collection, id),
-                    dateAddedSeconds = cursor.getLong(dateAddedCol)
+                    dateAddedSeconds = cursor.getLong(dateAddedCol),
+                    filePath = cursor.getString(filePathCol).orEmpty()
                 )
             }
         }
