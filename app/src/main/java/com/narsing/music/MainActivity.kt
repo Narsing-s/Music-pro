@@ -1128,7 +1128,7 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
     Column(Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(4.dp))
         Box(
-            Modifier.fillMaxWidth().heightIn(max = 292.dp).aspectRatio(1f).padding(8.dp),
+            Modifier.fillMaxWidth().heightIn(max = 320.dp).aspectRatio(1f).padding(4.dp),
             contentAlignment = Alignment.Center
         ) {
             Surface(
@@ -1141,7 +1141,7 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
                         Box(contentAlignment = Alignment.Center) {
                             Surface(Modifier.fillMaxSize().padding(16.dp), color = Color(0xFF191919), shape = CircleShape) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Surface(Modifier.size(100.dp), color = accentColor, shape = CircleShape) {
+                                    Surface(Modifier.size(116.dp), color = accentColor, shape = CircleShape) {
                                         Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = foreground, modifier = Modifier.size(42.dp)) }
                                     }
                                 }
@@ -1154,7 +1154,7 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
         Spacer(Modifier.height(10.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(title, color = foreground, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                Text(title, color = foreground, fontSize = 24.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                 Text(artist, color = subtleColor, fontSize = 14.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
                 Text(album.uppercase(), color = accentColor, fontSize = 10.sp, letterSpacing = 2.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
             }
