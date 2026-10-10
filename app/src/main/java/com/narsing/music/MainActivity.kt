@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.*
@@ -50,6 +51,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.delay
 
 private val Ink = Color(0xFF090909)
 private val Panel = Color(0xFF171717)
@@ -159,6 +161,8 @@ private fun MusicHome(
     var recentIds by remember { mutableStateOf<List<Long>>(emptyList()) }
     var sortMode by remember { mutableStateOf("DEFAULT") }
     var sortMenuExpanded by remember { mutableStateOf(false) }
+    var sleepTimerMinutes by remember { mutableIntStateOf(0) }
+    var sleepMenuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var preferencesLoaded by remember { mutableStateOf(false) }
 
@@ -173,13 +177,25 @@ private fun MusicHome(
         recentIds = prefs.getString("recent_ids", "")
             ?.split(",")?.mapNotNull { it.toLongOrNull() }?.distinct()?.take(30)
             ?: emptyList()
+        sortMode = prefs.getString("sort_mode", "DEFAULT") ?: "DEFAULT"
         preferencesLoaded = true
+    }
+    LaunchedEffect(sleepTimerMinutes) {
+        if (sleepTimerMinutes > 0) {
+            delay(sleepTimerMinutes * 60_000L)
+            if (playing) onToggle()
+            sleepTimerMinutes = 0
+        }
     }
     LaunchedEffect(selectedIndex, songs) {
         val song = songs.getOrNull(selectedIndex) ?: return@LaunchedEffect
         recentIds = (listOf(song.id) + recentIds.filter { it != song.id }).take(30)
         context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
             .edit().putString("recent_ids", recentIds.joinToString(",")).apply()
+    }
+    LaunchedEffect(sortMode, preferencesLoaded) {
+        if (preferencesLoaded) context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+            .edit().putString("sort_mode", sortMode).apply()
     }
     LaunchedEffect(theme, favorites, preferencesLoaded) {
         if (preferencesLoaded) {
@@ -211,12 +227,23 @@ private fun MusicHome(
                     Text("MUSIC PRO", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                     Text("MUSIC PRO", color = fg, fontSize = 34.sp, fontWeight = FontWeight.Black, letterSpacing = (-1).sp)
                 }
+                Box {
+                    IconButton(onClick = { sleepMenuExpanded = true }) {
+                        Icon(Icons.Default.Bedtime, contentDescription = "Sleep timer", tint = if (sleepTimerMinutes > 0) Accent else fg)
+                    }
+                    DropdownMenu(expanded = sleepMenuExpanded, onDismissRequest = { sleepMenuExpanded = false }) {
+                        DropdownMenuItem(text = { Text("Off") }, onClick = { sleepTimerMinutes = 0; sleepMenuExpanded = false })
+                        listOf(15, 30, 45, 60, 90).forEach { minutes ->
+                            DropdownMenuItem(text = { Text("Stop after $minutes minutes") }, onClick = { sleepTimerMinutes = minutes; sleepMenuExpanded = false })
+                        }
+                    }
+                }
                 IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, contentDescription = "Rescan music", tint = fg) }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("${songs.size} TRACKS", color = subtle, fontSize = 11.sp, letterSpacing = 1.5.sp)
                 Spacer(Modifier.weight(1f))
-                Text("OFFLINE LIBRARY", color = subtle, fontSize = 10.sp, letterSpacing = 1.sp)
+                Text(if (sleepTimerMinutes > 0) "SLEEP TIMER · ${sleepTimerMinutes} MIN" else "OFFLINE LIBRARY", color = if (sleepTimerMinutes > 0) Accent else subtle, fontSize = 10.sp, letterSpacing = 1.sp)
             }
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
