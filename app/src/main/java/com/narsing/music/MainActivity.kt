@@ -2,6 +2,7 @@ package com.narsing.music
 
 import android.Manifest
 import android.content.ComponentName
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -11,7 +12,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
@@ -35,6 +38,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -152,6 +156,29 @@ private fun MusicHome(
     var favorites by remember { mutableStateOf(setOf<Long>()) }
     var shuffle by remember { mutableStateOf(false) }
     var repeat by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var preferencesLoaded by remember { mutableStateOf(false) }
+
+    // Keep personal UI preferences on-device. No library files or playback data are moved.
+    LaunchedEffect(Unit) {
+        val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+        theme = prefs.getString("theme", "DARK") ?: "DARK"
+        favorites = prefs.getStringSet("favorites", emptySet())
+            ?.mapNotNull { it.toLongOrNull() }
+            ?.toSet()
+            ?: emptySet()
+        preferencesLoaded = true
+    }
+    LaunchedEffect(theme, favorites, preferencesLoaded) {
+        if (preferencesLoaded) {
+            context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+                .edit()
+                .putString("theme", theme)
+                .putStringSet("favorites", favorites.map { it.toString() }.toSet())
+                .apply()
+        }
+    }
+
     val bg = when (theme) { "LIGHT" -> Color(0xFFF4F1E8); "CUSTOM" -> Color(0xFF17111F); else -> Ink }
     val fg = if (theme == "LIGHT") Ink else Paper
     val subtle = if (theme == "LIGHT") Color(0xFF69665F) else Muted
@@ -203,7 +230,7 @@ private fun MusicHome(
                 }
             }
             Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("HOME", "TRACKS", "FAVORITES", "NOW PLAYING").forEach { label ->
                     val active = tab == label
                     Surface(color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(50), modifier = Modifier.clickable { tab = label; showFavorites = label == "FAVORITES" }) {
@@ -251,7 +278,7 @@ private fun MusicHome(
             } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat)
+                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat)
             } else if (filtered.isEmpty()) {
                 EmptyState("NOTHING IN THE LIBRARY", "Add audio files to your phone, then tap rescan.", "RESCAN LIBRARY", onRefresh)
             } else {
@@ -296,7 +323,7 @@ private fun MusicHome(
 }
 
 @Composable
-private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean) {
+private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean) {
     Column(Modifier.fillMaxWidth().weight(1f).padding(top = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth().aspectRatio(1f).padding(12.dp), contentAlignment = Alignment.Center) {
@@ -304,8 +331,8 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
                 Box(contentAlignment = Alignment.Center) {
                     Surface(Modifier.fillMaxSize().padding(18.dp), color = Color(0xFF101010), shape = CircleShape) {
                         Box(contentAlignment = Alignment.Center) {
-                            Surface(Modifier.size(92.dp), color = Accent, shape = CircleShape) {
-                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = Paper, modifier = Modifier.size(40.dp)) }
+                            Surface(Modifier.size(92.dp), color = accentColor, shape = CircleShape) {
+                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = foreground, modifier = Modifier.size(40.dp)) }
                             }
                         }
                     }
@@ -313,8 +340,8 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
             }
         }
         Spacer(Modifier.height(18.dp))
-        Text(title, color = Paper, fontSize = 24.sp, fontWeight = FontWeight.Black, maxLines = 2)
-        Text(artist, color = Muted, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+        Text(title, color = foreground, fontSize = 24.sp, fontWeight = FontWeight.Black, maxLines = 2)
+        Text(artist, color = subtleColor, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
         Text(album.uppercase(), color = Accent, fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.padding(top = 10.dp))
         Spacer(Modifier.weight(1f))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -328,11 +355,11 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
         }
         Spacer(Modifier.height(18.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, null, tint = if (shuffle) Accent else Muted, modifier = Modifier.size(26.dp)) }
+            IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, null, tint = if (shuffle) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
             IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = Paper, modifier = Modifier.size(30.dp)) }
             IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Paper, modifier = Modifier.size(30.dp)) }
             IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = Paper, modifier = Modifier.size(30.dp)) }
-            IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) Accent else Muted, modifier = Modifier.size(26.dp)) }
+            IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
         }
         Spacer(Modifier.height(28.dp))
     }
