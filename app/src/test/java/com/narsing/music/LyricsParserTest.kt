@@ -10,7 +10,7 @@ import org.robolectric.RobolectricTestRunner
 class LyricsParserTest {
     @Test
     fun parsesLrcTimestampsAndMultipleTimestampsOnOneLine() {
-        val parsed = parseTimedLyrics("[00:01.20]First line\\n[00:02.5][00:03.00]Repeated line")
+        val parsed = parseTimedLyrics("[00:01.20]First line\n[00:02.5][00:03.00]Repeated line")
 
         assertEquals(
             listOf(
