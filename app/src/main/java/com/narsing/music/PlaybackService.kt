@@ -145,6 +145,14 @@ class PlaybackService : MediaLibraryService() {
                 override fun onIsPlayingChanged(isPlaying: Boolean) {
                     refreshWidgetState()
                 }
+
+                override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
+                    refreshWidgetState()
+                }
+
+                override fun onRepeatModeChanged(repeatMode: Int) {
+                    refreshWidgetState()
+                }
             })
         }
         mediaSession = MediaLibrarySession.Builder(this, player!!, libraryCallback).build()
@@ -158,7 +166,9 @@ class PlaybackService : MediaLibraryService() {
             this,
             item?.mediaMetadata?.title?.toString() ?: "Choose a track",
             item?.mediaMetadata?.artist?.toString() ?: "Your offline library",
-            currentPlayer.isPlaying
+            currentPlayer.isPlaying,
+            currentPlayer.shuffleModeEnabled,
+            currentPlayer.repeatMode != Player.REPEAT_MODE_OFF
         )
     }
 
