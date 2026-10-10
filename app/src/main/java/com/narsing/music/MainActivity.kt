@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Bedtime
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.*
@@ -164,6 +166,11 @@ private fun MusicHome(
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var sleepTimerMinutes by remember { mutableIntStateOf(0) }
     var sleepMenuExpanded by remember { mutableStateOf(false) }
+    var playlists by remember { mutableStateOf<Map<String, List<Long>>>(emptyMap()) }
+    var showCreatePlaylist by remember { mutableStateOf(false) }
+    var newPlaylistName by remember { mutableStateOf("") }
+    var activePlaylist by remember { mutableStateOf<String?>(null) }
+    var addToPlaylistSong by remember { mutableStateOf<Song?>(null) }
     val context = LocalContext.current
     var preferencesLoaded by remember { mutableStateOf(false) }
 
@@ -179,6 +186,10 @@ private fun MusicHome(
             ?.split(",")?.mapNotNull { it.toLongOrNull() }?.distinct()?.take(30)
             ?: emptyList()
         sortMode = prefs.getString("sort_mode", "DEFAULT") ?: "DEFAULT"
+        playlists = prefs.getStringSet("playlists", emptySet())?.mapNotNull { entry ->
+            val parts = entry.split("::", limit = 2)
+            if (parts.size == 2 && parts[0].isNotBlank()) parts[0] to parts[1].split(",").mapNotNull { it.toLongOrNull() }.distinct() else null
+        }?.toMap() ?: emptyMap()
         preferencesLoaded = true
     }
     LaunchedEffect(sleepTimerMinutes) {
@@ -198,6 +209,10 @@ private fun MusicHome(
         if (preferencesLoaded) context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
             .edit().putString("sort_mode", sortMode).apply()
     }
+    LaunchedEffect(playlists, preferencesLoaded) {
+        if (preferencesLoaded) context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+            .edit().putStringSet("playlists", playlists.map { (name, ids) -> "$name::${ids.joinToString(",")}" }.toSet()).apply()
+    }
     LaunchedEffect(theme, favorites, preferencesLoaded) {
         if (preferencesLoaded) {
             context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
@@ -211,7 +226,11 @@ private fun MusicHome(
     val bg = when (theme) { "LIGHT" -> Color(0xFFF4F1E8); "CUSTOM" -> Color(0xFF17111F); else -> Ink }
     val fg = if (theme == "LIGHT") Ink else Paper
     val subtle = if (theme == "LIGHT") Color(0xFF69665F) else Muted
-    val sourceSongs = if (tab == "RECENT") recentIds.mapNotNull { id -> songs.find { it.id == id } } else songs
+    val sourceSongs = when (tab) {
+        "RECENT" -> recentIds.mapNotNull { id -> songs.find { it.id == id } }
+        "PLAYLISTS" -> activePlaylist?.let { name -> playlists[name].orEmpty().mapNotNull { id -> songs.find { it.id == id } } } ?: songs
+        else -> songs
+    }
     val filtered = sourceSongs.filter { it.title.contains(query, true) || it.artist.contains(query, true) || it.album.contains(query, true) }
         .filter { !showFavorites || it.id in favorites }
     val sortedFiltered = when (sortMode) {
@@ -279,7 +298,7 @@ private fun MusicHome(
             }
             Spacer(Modifier.height(14.dp))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("HOME", "TRACKS", "ARTISTS", "ALBUMS", "RECENT", "FAVORITES", "NOW PLAYING").forEach { label ->
+                listOf("HOME", "TRACKS", "ARTISTS", "ALBUMS", "RECENT", "PLAYLISTS", "FAVORITES", "NOW PLAYING").forEach { label ->
                     val active = tab == label
                     Surface(color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(50), modifier = Modifier.clickable { tab = label; showFavorites = label == "FAVORITES" }) {
                         Text(label, color = if (active) Color.White else subtle, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
@@ -379,6 +398,40 @@ private fun MusicHome(
                         HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
                     }
                 }
+            } else if (tab == "PLAYLISTS" && activePlaylist == null) {
+                Column(Modifier.weight(1f)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("YOUR PLAYLISTS", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+                        Button(onClick = { newPlaylistName = ""; showCreatePlaylist = true }, colors = ButtonDefaults.buttonColors(containerColor = Accent)) { Icon(Icons.Default.Add, null); Spacer(Modifier.width(4.dp)); Text("CREATE") }
+                    }
+                    if (playlists.isEmpty()) EmptyState("NO PLAYLISTS YET", "Create a playlist and add your favorite tracks.", "CREATE PLAYLIST", { showCreatePlaylist = true }) else LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
+                        itemsIndexed(playlists.keys.sorted(), key = { _, name -> name }) { _, name ->
+                            Row(Modifier.fillMaxWidth().clickable { activePlaylist = name }.padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.QueueMusic, null, tint = Accent, modifier = Modifier.size(28.dp)) } }
+                                Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) { Text(name, color = fg, fontWeight = FontWeight.Bold); Text("${playlists[name].orEmpty().size} tracks", color = subtle, fontSize = 12.sp) }
+                                TextButton(onClick = { playlists = playlists - name }) { Text("Delete", color = Accent) }
+                            }
+                            HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
+                        }
+                    }
+                }
+            } else if (tab == "PLAYLISTS" && activePlaylist != null) {
+                Column(Modifier.weight(1f)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { activePlaylist = null }) { Text("‹ PLAYLISTS", color = Accent) }
+                        Text(activePlaylist ?: "", color = fg, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    if (filtered.isEmpty()) EmptyState("PLAYLIST IS EMPTY", "Add tracks from your library using the track menu.", "BROWSE TRACKS", { tab = "TRACKS" }) else LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
+                        itemsIndexed(sortedFiltered, key = { _, song -> song.id }) { _, song ->
+                            Row(Modifier.fillMaxWidth().clickable { onPlay(songs.indexOfFirst { it.id == song.id }) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.MusicNote, null, tint = Accent, modifier = Modifier.size(30.dp)); Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) { Text(song.title, color = fg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis); Text(song.artist, color = subtle, fontSize = 12.sp) }
+                                TextButton(onClick = { activePlaylist?.let { name -> playlists = playlists + (name to playlists[name].orEmpty().filterNot { it == song.id }) } }) { Text("Remove", color = Accent) }
+                            }
+                        }
+                    }
+                }
             } else if (filtered.isEmpty()) {
                 EmptyState(if (tab == "RECENT") "NO RECENT TRACKS YET" else "NOTHING IN THE LIBRARY", if (tab == "RECENT") "Play a song and it will appear here." else "Add audio files to your phone, then tap rescan.", "RESCAN LIBRARY", onRefresh)
             } else {
@@ -413,6 +466,13 @@ private fun MusicHome(
                                 Text(song.artist, color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             IconButton(onClick = { favorites = if (song.id in favorites) favorites - song.id else favorites + song.id }) { Icon(if (song.id in favorites) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (song.id in favorites) Accent else subtle) }
+                            Box {
+                                IconButton(onClick = { addToPlaylistSong = song }) { Icon(Icons.Default.Add, contentDescription = "Add to playlist", tint = subtle) }
+                                DropdownMenu(expanded = addToPlaylistSong?.id == song.id, onDismissRequest = { addToPlaylistSong = null }) {
+                                    if (playlists.isEmpty()) DropdownMenuItem(text = { Text("Create playlist first") }, onClick = { addToPlaylistSong = null; tab = "PLAYLISTS"; showCreatePlaylist = true })
+                                    playlists.keys.sorted().forEach { name -> DropdownMenuItem(text = { Text(if (song.id in playlists[name].orEmpty()) "✓ $name" else name) }, onClick = { val ids = playlists[name].orEmpty(); playlists = playlists + (name to if (song.id in ids) ids else ids + song.id); addToPlaylistSong = null }) }
+                                }
+                            }
                             Text(formatDuration(song.durationMs), color = subtle, fontSize = 11.sp)
                         }
                         HorizontalDivider(color = Color(0xFF292929))
@@ -438,6 +498,13 @@ private fun MusicHome(
             }
         }
     }
+    if (showCreatePlaylist) AlertDialog(
+        onDismissRequest = { showCreatePlaylist = false },
+        title = { Text("Create playlist") },
+        text = { OutlinedTextField(value = newPlaylistName, onValueChange = { newPlaylistName = it.take(40) }, label = { Text("Playlist name") }, singleLine = true) },
+        confirmButton = { TextButton(onClick = { val name = newPlaylistName.trim(); if (name.isNotBlank() && name !in playlists) { playlists = playlists + (name to emptyList()); activePlaylist = name }; showCreatePlaylist = false; tab = "PLAYLISTS" }) { Text("Create") } },
+        dismissButton = { TextButton(onClick = { showCreatePlaylist = false }) { Text("Cancel") } }
+    )
 }
 
 @Composable
