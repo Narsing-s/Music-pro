@@ -886,7 +886,19 @@ private fun MusicHome(
                 Column(Modifier.weight(1f)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         TextButton(onClick = { activePlaylist = null }) { Text("‹ PLAYLISTS", color = Accent) }
-                        Text(activePlaylist ?: "", color = fg, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(activePlaylist ?: "", modifier = Modifier.weight(1f), color = fg, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        IconButton(onClick = {
+                            val name = activePlaylist ?: "Music playlist"
+                            val trackLines = playlists[name].orEmpty().mapNotNull { id -> songs.find { it.id == id } }
+                                .mapIndexed { index, song -> "${index + 1}. ${song.title} — ${song.artist}" }
+                            val message = (listOf("$name • Music Pro", "${trackLines.size} tracks", "") + trackLines).joinToString("\n")
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, name)
+                                putExtra(Intent.EXTRA_TEXT, message)
+                            }
+                            runCatching { context.startActivity(Intent.createChooser(shareIntent, "Share playlist")) }
+                        }) { Icon(Icons.Default.Share, contentDescription = "Share playlist", tint = Accent) }
                     }
                     if (filtered.isEmpty()) EmptyState("PLAYLIST IS EMPTY", "Add tracks from your library using the track menu.", "BROWSE TRACKS", { tab = "TRACKS" }) else LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
                         itemsIndexed(sortedFiltered, key = { _, song -> song.id }) { _, song ->
