@@ -19,12 +19,10 @@ fun parseTimedLyrics(raw: String): List<TimedLyric> {
 private fun parseLrc(raw: String): List<TimedLyric> {
     val lines = raw.lineSequence().toList()
     val timestampPattern = Regex("\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{1,3}))?\\]")
-    val offsetMs = Regex("(?i)^\\[offset:\\s*([+-]?\\d+)\\]\\s*$")
-        .findAll(raw)
+    val offsetPattern = Regex("(?i)^\\[offset:\\s*([+-]?\\d+)\\]\\s*$")
+    val offsetMs = lines.asSequence()
+        .mapNotNull { offsetPattern.matchEntire(it)?.groupValues?.get(1)?.toLongOrNull() }
         .lastOrNull()
-        ?.groupValues
-        ?.get(1)
-        ?.toLongOrNull()
         ?: 0L
 
     return lines.asSequence().flatMap { line ->
