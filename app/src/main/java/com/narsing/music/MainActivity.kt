@@ -976,7 +976,7 @@ private fun MusicHome(
                     }
                 }
             } else if (tab == "GENRES") {
-                val genres = songs.groupBy { it.genre.ifBlank { "Unknown genre" } }.toList().sortedBy { it.first.lowercase() }
+                val genres = songs.flatMap { song -> song.genres.ifEmpty { listOf(song.genre.ifBlank { "Unknown genre" }) }.map { genreName -> genreName to song } }.groupBy({ it.first }, { it.second }).toList().sortedBy { it.first.lowercase() }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
                     item { Text("BROWSE GENRES", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 10.dp)) }
                     itemsIndexed(genres, key = { _, item -> item.first }) { _, item ->
