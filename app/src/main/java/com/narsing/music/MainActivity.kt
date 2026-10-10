@@ -782,7 +782,6 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
                 }
             }
         }
-            }
         }
         Spacer(Modifier.height(20.dp))
     }
