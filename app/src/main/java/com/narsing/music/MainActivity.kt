@@ -112,6 +112,7 @@ class MainActivity : ComponentActivity() {
                     onRepeat = { enabled -> mediaController?.repeatMode = if (enabled) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF },
                     onProgress = { playbackProgress() },
                     onSeek = { position -> mediaController?.seekTo(position) },
+                    onSpeed = { speed -> mediaController?.setPlaybackSpeed(speed) },
                     onDelete = { song -> requestDeleteSong(song, deleteLauncher) }
                 )
             }
