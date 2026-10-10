@@ -554,8 +554,38 @@ private fun MusicHome(
                             }
                         }
                     }
+                    val recentlyAddedIndices = songs.indices
+                        .sortedByDescending { songs[it].dateAddedSeconds }
+                        .take(20)
+                    Spacer(Modifier.height(8.dp))
+                    Surface(
+                        onClick = {
+                            if (recentlyAddedIndices.isNotEmpty()) {
+                                query = ""
+                                showFavorites = false
+                                activePlaylist = null
+                                tab = "TRACKS"
+                                onPlayCollection(recentlyAddedIndices, false)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(color = Accent.copy(alpha = 0.15f), shape = RoundedCornerShape(10.dp)) {
+                                Icon(Icons.Default.Refresh, contentDescription = null, tint = Accent, modifier = Modifier.padding(9.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("JUST ADDED", color = fg, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.7.sp)
+                                Text("Play your newest music first", color = subtle, fontSize = 11.sp)
+                            }
+                            Text("${recentlyAddedIndices.size} tracks", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                     val dailyMixIndices = (
-                        recentIds.mapNotNull { id -> songs.indexOfFirst { it.id == id }.takeIf { it >= 0 } } +
+                        recentIds.mapNotNull { id -> songs.indexOfFirst { it.id == id }.takeIf { it >= 0 } +
                             songs.indices.filter { songs[it].id in favorites } +
                             songs.indices.sortedByDescending { songs[it].dateAddedSeconds }.take(10)
                         ).distinct()
