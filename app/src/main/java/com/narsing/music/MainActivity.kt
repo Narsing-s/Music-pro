@@ -350,6 +350,16 @@ private fun MusicHome(
         }
     }
 
+    val lyricsImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { inputUri ->
+        if (inputUri != null) {
+            runCatching {
+                lyricsDraft = context.contentResolver.openInputStream(inputUri)?.bufferedReader()?.use { it.readText().take(20000) }
+                    ?: error("Could not read the selected lyrics file")
+                Toast.makeText(context, "Lyrics file loaded", Toast.LENGTH_SHORT).show()
+            }.onFailure { Toast.makeText(context, "Lyrics import failed: ${it.message ?: "unknown error"}", Toast.LENGTH_LONG).show() }
+        }
+    }
+
     val exportPlaylistLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("audio/x-mpegurl")) { outputUri ->
         val playlistName = pendingExportPlaylistName
         pendingExportPlaylistName = null
@@ -1341,6 +1351,11 @@ private fun MusicHome(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Paste your own lyrics or LRC-timestamped lyrics. Saved only on this device.", color = subtle, fontSize = 12.sp)
+                    OutlinedButton(onClick = { lyricsImportLauncher.launch(arrayOf("text/plain", "application/octet-stream", "application/x-subrip")) }, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.Folder, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("IMPORT .LRC / .TXT FILE")
+                    }
                     OutlinedTextField(
                         value = lyricsDraft,
                         onValueChange = { lyricsDraft = it.take(20000) },
