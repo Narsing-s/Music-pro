@@ -512,23 +512,26 @@ private fun MusicHome(
         val song = songs.getOrNull(selectedIndex) ?: return@LaunchedEffect
         if (!playing) return@LaunchedEffect
         var pendingMs = 0L
+        var elapsedMs = activeSessionListenMs
         try {
             while (true) {
                 delay(1_000L)
-                activeSessionListenMs += 1_000L
+                elapsedMs += 1_000L
                 pendingMs += 1_000L
                 if (pendingMs >= 10_000L) {
                     ListeningInsightsStore.addListeningTime(context, song, pendingMs)
                     pendingMs = 0L
+                    activeSessionListenMs = elapsedMs
                     insightRefreshVersion++
                 }
-                if (!activeSessionCounted && activeSessionListenMs >= 30_000L) {
+                if (!activeSessionCounted && elapsedMs >= 30_000L) {
                     ListeningInsightsStore.recordPlay(context, song)
                     activeSessionCounted = true
                     insightRefreshVersion++
                 }
             }
         } finally {
+            activeSessionListenMs = elapsedMs
             if (pendingMs > 0L) ListeningInsightsStore.addListeningTime(context, song, pendingMs)
             insightRefreshVersion++
         }
