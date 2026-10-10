@@ -16,7 +16,7 @@ fun parseTimedLyrics(raw: String): List<TimedLyric> {
 }
 
 private fun parseLrc(raw: String): List<TimedLyric> {
-    val pattern = Regex("\\\\[(\\\\d{1,2}):(\\\\d{2})(?:\\\\.(\\\\d{1,3}))?\\\\]")
+    val pattern = Regex("\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{1,3}))?\\]")
     return raw.lineSequence().flatMap { line ->
         val matches = pattern.findAll(line).toList()
         val lyric = pattern.replace(line, "").trim()
@@ -53,7 +53,7 @@ private fun parseTtml(raw: String): List<TimedLyric> {
                     if (event == XmlPullParser.TEXT || event == XmlPullParser.CDSECT) text.append(parser.text)
                     event = parser.next()
                 }
-                val line = text.toString().replace(Regex("\\\\s+"), " ").trim()
+                val line = text.toString().replace(Regex("\\s+"), " ").trim()
                 if (startMs != null && line.isNotBlank()) lines += TimedLyric(startMs, line)
             } else {
                 event = parser.next()
@@ -64,7 +64,7 @@ private fun parseTtml(raw: String): List<TimedLyric> {
 }
 
 private fun parseTtmlTime(value: String): Long? {
-    val match = Regex("^(?:(\\\\d+):)?(\\\\d{2}):(\\\\d{2})(?:[.,](\\\\d{1,3}))?$|^(\\\\d+(?:\\\\.\\\\d+)?)s$").matchEntire(value.trim())
+    val match = Regex("^(?:(\\d+):)?(\\d{2}):(\\d{2})(?:[.,](\\d{1,3}))?$|^(\\d+(?:\\.\\d+)?)s$").matchEntire(value.trim())
         ?: return null
     if (match.groupValues[5].isNotBlank()) return ((match.groupValues[5].toDoubleOrNull() ?: return null) * 1000.0).toLong()
     val hours = match.groupValues[1].toLongOrNull() ?: 0L
