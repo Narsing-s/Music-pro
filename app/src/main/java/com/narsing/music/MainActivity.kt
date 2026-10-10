@@ -875,7 +875,10 @@ private fun MusicHome(
                             Row(Modifier.fillMaxWidth().clickable { activePlaylist = name }.padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.QueueMusic, null, tint = Accent, modifier = Modifier.size(28.dp)) } }
                                 Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) { Text(name, color = fg, fontWeight = FontWeight.Bold); Text("${playlists[name].orEmpty().size} tracks", color = subtle, fontSize = 12.sp) }
+                                Column(Modifier.weight(1f)) {
+                                    Text(name, color = fg, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                                    Text("${playlists[name].orEmpty().size} tracks", color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
                                 TextButton(onClick = { playlists = playlists - name; if (activePlaylist == name) activePlaylist = null }) { Text("Delete", color = Accent) }
                             }
                             HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
@@ -920,7 +923,10 @@ private fun MusicHome(
                         itemsIndexed(sortedFiltered, key = { _, song -> song.id }) { _, song ->
                             Row(Modifier.fillMaxWidth().clickable { onPlay(songs.indexOfFirst { it.id == song.id }) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.MusicNote, null, tint = Accent, modifier = Modifier.size(30.dp)); Spacer(Modifier.width(12.dp))
-                                Column(Modifier.weight(1f)) { Text(song.title, color = fg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis); Text(song.artist, color = subtle, fontSize = 12.sp) }
+                                Column(Modifier.weight(1f)) {
+                                    Text(song.title, color = fg, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                                    Text(song.artist, color = subtle, fontSize = 12.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                                }
                                 TextButton(onClick = { activePlaylist?.let { name -> playlists = playlists + (name to playlists[name].orEmpty().filterNot { it == song.id }) } }) { Text("Remove", color = Accent) }
                             }
                         }
@@ -929,12 +935,27 @@ private fun MusicHome(
             } else if (filtered.isEmpty()) {
                 EmptyState(if (tab == "RECENT") "NO RECENT TRACKS YET" else "NOTHING IN THE LIBRARY", if (tab == "RECENT") "Play a song and it will appear here." else "Add audio files to your phone, then tap rescan.", "RESCAN LIBRARY", onRefresh)
             } else {
-                Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(if (showFavorites || tab == "FAVORITES") "YOUR FAVORITES" else "YOUR COLLECTION", color = fg, fontWeight = FontWeight.Black, fontSize = 18.sp)
-                        Text("${sortedFiltered.size} tracks • ${songs.map { it.artist }.distinct().size} artists", color = subtle, fontSize = 12.sp)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    // Keep the collection heading on its own row so action buttons never squeeze it into vertical text.
+                    Text(
+                        if (showFavorites || tab == "FAVORITES") "YOUR FAVORITES" else "YOUR COLLECTION",
+                        modifier = Modifier.fillMaxWidth(),
+                        color = fg,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 18.sp,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        "${sortedFiltered.size} tracks • ${songs.map { it.artist }.distinct().size} artists",
+                        color = subtle,
+                        fontSize = 12.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
+                    )
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                         if (tab == "RECENT") {
                             TextButton(
                                 onClick = {
@@ -942,8 +963,8 @@ private fun MusicHome(
                                     context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
                                         .edit().putString("recent_ids", "").apply()
                                 },
-                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
-                            ) { Text("CLEAR HISTORY", color = Accent, fontSize = 9.sp, fontWeight = FontWeight.Bold) }
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                            ) { Text("CLEAR", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
                         }
                         Button(
                             onClick = { onPlayCollection(sortedFiltered.map { song -> songs.indexOfFirst { it.id == song.id } }.filter { it >= 0 }, false) },
@@ -951,20 +972,21 @@ private fun MusicHome(
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Accent)
-                        ) { Icon(Icons.Default.PlayArrow, contentDescription = "Play all filtered tracks", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(3.dp)); Text("PLAY", fontSize = 10.sp) }
+                        ) { Icon(Icons.Default.PlayArrow, contentDescription = "Play all filtered tracks", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(3.dp)); Text("PLAY", fontSize = 10.sp, maxLines = 1) }
                         IconButton(onClick = { onPlayCollection(sortedFiltered.map { song -> songs.indexOfFirst { it.id == song.id } }.filter { it >= 0 }, true) }, enabled = sortedFiltered.isNotEmpty()) {
                             Icon(Icons.Default.Shuffle, contentDescription = "Shuffle filtered tracks", tint = Accent)
                         }
-                    }
-                    Box {
-                        OutlinedButton(onClick = { sortMenuExpanded = true }, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
-                            Icon(Icons.Default.MoreVert, contentDescription = null, tint = fg)
-                            Spacer(Modifier.width(4.dp))
-                            Text(when (sortMode) { "TITLE" -> "Title"; "ARTIST" -> "Artist"; "LONGEST" -> "Longest"; "SHORTEST" -> "Shortest"; "NEWEST" -> "Newest"; else -> "Sort" }, color = fg)
-                        }
-                        DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
-                            listOf("DEFAULT" to "Library order", "NEWEST" to "Recently added", "TITLE" to "Title A–Z", "ARTIST" to "Artist A–Z", "LONGEST" to "Longest first", "SHORTEST" to "Shortest first").forEach { (mode, label) ->
-                                DropdownMenuItem(text = { Text(label) }, onClick = { sortMode = mode; sortMenuExpanded = false })
+                        Spacer(Modifier.weight(1f))
+                        Box {
+                            OutlinedButton(onClick = { sortMenuExpanded = true }, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)) {
+                                Icon(Icons.Default.MoreVert, contentDescription = null, tint = fg)
+                                Spacer(Modifier.width(2.dp))
+                                Text(when (sortMode) { "TITLE" -> "Title"; "ARTIST" -> "Artist"; "LONGEST" -> "Longest"; "SHORTEST" -> "Shortest"; "NEWEST" -> "Newest"; else -> "Sort" }, color = fg, maxLines = 1)
+                            }
+                            DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
+                                listOf("DEFAULT" to "Library order", "NEWEST" to "Recently added", "TITLE" to "Title A–Z", "ARTIST" to "Artist A–Z", "LONGEST" to "Longest first", "SHORTEST" to "Shortest first").forEach { (mode, label) ->
+                                    DropdownMenuItem(text = { Text(label) }, onClick = { sortMode = mode; sortMenuExpanded = false })
+                                }
                             }
                         }
                     }
