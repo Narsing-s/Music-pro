@@ -1395,7 +1395,8 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
                             Surface(Modifier.fillMaxSize().padding(16.dp), color = Color(0xFF191919), shape = CircleShape) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Surface(Modifier.size(116.dp), color = accentColor, shape = CircleShape) {
-                                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = foreground, modifier = Modifier.size(42.dp)) }
+                                        if (artworkUri != null) AsyncImage(model = artworkUri, contentDescription = "Custom track artwork", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(CircleShape))
+                                        else Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = foreground, modifier = Modifier.size(42.dp)) }
                                     }
                                 }
                             }
@@ -1410,7 +1411,10 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
                 Text(title, color = foreground, fontSize = 24.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                 Text(artist, color = subtleColor, fontSize = 14.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
                 Text(album.uppercase(), color = accentColor, fontSize = 10.sp, letterSpacing = 2.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {\n                    TextButton(onClick = onOpenLyrics, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)) { Text(if (hasLyrics) "VIEW / EDIT LYRICS" else "ADD LYRICS", color = accentColor, fontSize = 12.sp, letterSpacing = 0.5.sp) }\n                    TextButton(onClick = onChooseArtwork, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) { Text("ARTWORK", color = accentColor, fontSize = 12.sp) }\n                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = onOpenLyrics, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)) { Text(if (hasLyrics) "VIEW / EDIT LYRICS" else "ADD LYRICS", color = accentColor, fontSize = 12.sp, letterSpacing = 0.5.sp) }
+                    TextButton(onClick = onChooseArtwork, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) { Text("ARTWORK", color = accentColor, fontSize = 12.sp) }
+                }
             }
             IconButton(onClick = onToggleFavorite) { Icon(if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites", tint = if (isFavorite) accentColor else subtleColor) }
         }
