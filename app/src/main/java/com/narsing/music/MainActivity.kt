@@ -280,6 +280,10 @@ private fun MusicHome(
     var activePlaylist by remember { mutableStateOf<String?>(null) }
     var addToPlaylistSong by remember { mutableStateOf<Song?>(null) }
     var detailsSong by remember { mutableStateOf<Song?>(null) }
+    var editMetadataSong by remember { mutableStateOf<Song?>(null) }
+    var metadataDraftTitle by remember { mutableStateOf("") }
+    var metadataDraftArtist by remember { mutableStateOf("") }
+    var metadataDraftAlbum by remember { mutableStateOf("") }
     var lyricsDialogSong by remember { mutableStateOf<Song?>(null) }
     var lyricsDraft by remember { mutableStateOf("") }
     var deleteSong by remember { mutableStateOf<Song?>(null) }
@@ -1018,6 +1022,7 @@ private fun MusicHome(
                                 DropdownMenu(expanded = addToPlaylistSong?.id == song.id, onDismissRequest = { addToPlaylistSong = null }) {
                                     DropdownMenuItem(text = { Text("Play next") }, onClick = { onPlayNext(originalIndex); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Track details") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { detailsSong = song; addToPlaylistSong = null })
+                                    DropdownMenuItem(text = { Text("Edit metadata") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { metadataDraftTitle = song.title; metadataDraftArtist = song.artist; metadataDraftAlbum = song.album; editMetadataSong = song; addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Share audio") }, leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) }, onClick = { onShare(song); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Delete from device", color = Color(0xFFE84B35)) }, onClick = { deleteSong = song; addToPlaylistSong = null })
                                     if (playlists.isEmpty()) DropdownMenuItem(text = { Text("Create playlist first") }, onClick = { addToPlaylistSong = null; tab = "PLAYLISTS"; showCreatePlaylist = true })
@@ -1105,7 +1110,39 @@ private fun MusicHome(
                     Text(formatDuration(song.durationMs))
                 }
             },
-            confirmButton = { TextButton(onClick = { detailsSong = null }) { Text("Done") } }
+            confirmButton = {
+                Row {
+                    TextButton(onClick = { metadataDraftTitle = song.title; metadataDraftArtist = song.artist; metadataDraftAlbum = song.album; editMetadataSong = song; detailsSong = null }) { Text("Edit metadata") }
+                    TextButton(onClick = { detailsSong = null }) { Text("Done") }
+                }
+            }
+        )
+    }
+    editMetadataSong?.let { song ->
+        AlertDialog(
+            onDismissRequest = { editMetadataSong = null },
+            title = { Text("Edit track metadata") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Changes are saved privately on this device. The original audio file is not modified.", color = subtle, fontSize = 12.sp)
+                    OutlinedTextField(value = metadataDraftTitle, onValueChange = { metadataDraftTitle = it.take(180) }, label = { Text("Track title") }, singleLine = true)
+                    OutlinedTextField(value = metadataDraftArtist, onValueChange = { metadataDraftArtist = it.take(180) }, label = { Text("Artist") }, singleLine = true)
+                    OutlinedTextField(value = metadataDraftAlbum, onValueChange = { metadataDraftAlbum = it.take(180) }, label = { Text("Album") }, singleLine = true)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit()
+                        .putString("metadata_${song.id}_title", metadataDraftTitle.trim().ifBlank { "Unknown track" })
+                        .putString("metadata_${song.id}_artist", metadataDraftArtist.trim().ifBlank { "Unknown artist" })
+                        .putString("metadata_${song.id}_album", metadataDraftAlbum.trim().ifBlank { "Unknown album" })
+                        .apply()
+                    editMetadataSong = null
+                    onRefresh()
+                    Toast.makeText(context, "Track details saved on this device", Toast.LENGTH_SHORT).show()
+                }) { Text("Save changes") }
+            },
+            dismissButton = { TextButton(onClick = { editMetadataSong = null }) { Text("Cancel") } }
         )
     }
     lyricsDialogSong?.let { song ->
