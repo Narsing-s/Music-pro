@@ -143,6 +143,10 @@ app/build/outputs/apk/debug/app-debug.apk
 
 You can also open the project in Android Studio, sync Gradle, and run the `app` configuration.
 
+## 🧩 Playlist reliability
+
+M3U exports preserve Unicode song and playlist names, keep Android media URIs intact, and sanitize multiline track metadata so titles or artist names cannot accidentally create extra playlist entries. The export flow and existing screen layout remain unchanged.
+
 ## 🔐 Privacy
 
 Music Pro is designed for local listening: it reads audio metadata from your device's media collection and stores app preferences locally. No account is required to use the local music library. Sharing is initiated by you through Android's Sharesheet; review the destination and preview before sending anything.
