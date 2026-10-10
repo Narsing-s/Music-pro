@@ -993,10 +993,15 @@ private fun MusicHome(
                     item { Text("BROWSE GENRES", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 10.dp)) }
                     itemsIndexed(genres, key = { _, item -> item.first }) { _, item ->
                         Row(Modifier.fillMaxWidth().clickable { val indices = item.second.mapNotNull { track -> songs.indexOfFirst { it.id == track.id }.takeIf { it >= 0 } }; if (indices.isNotEmpty()) onPlayCollection(indices, false) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = Accent, modifier = Modifier.size(26.dp)) } }
+                            Surface(Modifier.size(60.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
+                                val art = artworkUris["genre_${item.first}"]
+                                if (art != null) AsyncImage(model = art, contentDescription = "${item.first} artwork", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)))
+                                else Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = Accent, modifier = Modifier.size(26.dp)) }
+                            }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) { Text(item.first, color = fg, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis); Text(item.second.size.toString() + " tracks", color = subtle, fontSize = 12.sp) }
                             Icon(Icons.Default.PlayArrow, contentDescription = "Play genre", tint = Accent)
+                            IconButton(onClick = { artworkTargetKey = "genre_${item.first}"; artworkTargetLabel = item.first; artworkPickerLauncher.launch(arrayOf("image/*")) }) { Icon(Icons.Default.Image, contentDescription = "Change genre artwork", tint = subtle) }
                         }
                         HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
                     }
@@ -1035,12 +1040,17 @@ private fun MusicHome(
                     if (playlists.isEmpty()) EmptyState("NO PLAYLISTS YET", "Create a playlist and add your favorite tracks.", "CREATE PLAYLIST", { showCreatePlaylist = true }) else LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
                         itemsIndexed(playlists.keys.sorted(), key = { _, name -> name }) { _, name ->
                             Row(Modifier.fillMaxWidth().clickable { activePlaylist = name }.padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.QueueMusic, null, tint = Accent, modifier = Modifier.size(28.dp)) } }
+                                                                Surface(Modifier.size(60.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
+                                    val art = artworkUris["playlist_$name"]
+                                    if (art != null) AsyncImage(model = art, contentDescription = "$name artwork", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)))
+                                    else Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.QueueMusic, null, tint = Accent, modifier = Modifier.size(28.dp)) }
+                                }
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(name, color = fg, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                                     Text("${playlists[name].orEmpty().size} tracks", color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
+                                IconButton(onClick = { artworkTargetKey = "playlist_$name"; artworkTargetLabel = name; artworkPickerLauncher.launch(arrayOf("image/*")) }) { Icon(Icons.Default.Image, contentDescription = "Change playlist artwork", tint = subtle) }
                                 TextButton(onClick = { pendingExportPlaylistName = name; exportPlaylistLauncher.launch("${name.replace(Regex("[^A-Za-z0-9 _-]"), "").ifBlank { "Music playlist" }}.m3u") }) { Text("Export", color = Accent) }
                                 TextButton(onClick = { playlists = playlists - name; if (activePlaylist == name) activePlaylist = null }) { Text("Delete", color = Accent) }
                             }
