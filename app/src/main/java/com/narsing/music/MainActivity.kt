@@ -105,20 +105,6 @@ private val Accent = Color(0xFFE84B35)
 
 private data class QueueEntry(val index: Int, val title: String, val artist: String, val isCurrent: Boolean)
 private fun splitArtists(value: String): List<String> = value.split(Regex("""\s*(?:;|,|\s&\s|\bfeat\.?\s+|\bft\.?\s+|\bfeaturing\s+)\s*""", RegexOption.IGNORE_CASE)).map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }
-private data class TimedLyric(val timeMs: Long, val text: String)
-private fun parseTimedLyrics(raw: String): List<TimedLyric> {
-    val pattern = Regex("\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{1,3}))?\\]")
-    return raw.lineSequence().flatMap { line ->
-        val matches = pattern.findAll(line).toList()
-        val lyric = pattern.replace(line, "").trim()
-        if (matches.isEmpty() || lyric.isBlank()) emptySequence() else matches.asSequence().map { match ->
-            val minutes = match.groupValues[1].toLongOrNull() ?: 0L
-            val seconds = match.groupValues[2].toLongOrNull() ?: 0L
-            val fraction = match.groupValues[3].padEnd(3, '0').take(3).toLongOrNull() ?: 0L
-            TimedLyric((minutes * 60L + seconds) * 1000L + fraction, lyric)
-        }
-    }.sortedBy { it.timeMs }.toList()
-}
 
 class MainActivity : ComponentActivity() {
     private var mediaController: MediaController? = null
