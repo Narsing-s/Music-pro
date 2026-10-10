@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -290,6 +291,8 @@ private fun MusicHome(
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var sleepTimerMinutes by remember { mutableIntStateOf(0) }
     var sleepMenuExpanded by remember { mutableStateOf(false) }
+    var showEqualizerDialog by remember { mutableStateOf(false) }
+    var equalizerLevels by remember { mutableStateOf(listOf(0f, 0f, 0f, 0f, 0f)) }
     var playlists by remember { mutableStateOf<Map<String, List<Long>>>(emptyMap()) }
     var showCreatePlaylist by remember { mutableStateOf(false) }
     var newPlaylistName by remember { mutableStateOf("") }
@@ -380,6 +383,7 @@ private fun MusicHome(
         val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
         theme = prefs.getString("theme", "DARK") ?: "DARK"
         playbackSpeed = prefs.getFloat("playback_speed", 1f).coerceIn(0.5f, 2f)
+        equalizerLevels = (prefs.getString("equalizer_levels", "0,0,0,0,0") ?: "0,0,0,0,0").split(",").mapNotNull { it.toFloatOrNull() }.take(5).let { values -> (values + List((5 - values.size).coerceAtLeast(0)) { 0f }).take(5) }
         shuffle = prefs.getBoolean("shuffle_enabled", false)
         repeat = prefs.getBoolean("repeat_enabled", false)
         favorites = prefs.getStringSet("favorites", emptySet())
@@ -489,6 +493,7 @@ private fun MusicHome(
                         }
                     }
                 }
+                IconButton(onClick = { showEqualizerDialog = true }) { Icon(Icons.Default.Tune, contentDescription = "Equalizer", tint = if (equalizerLevels.any { it != 0f }) Accent else fg) }
                 IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, contentDescription = "Rescan music", tint = fg) }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1298,6 +1303,38 @@ private fun MusicHome(
             }
         )
     }
+    if (showEqualizerDialog) AlertDialog(
+        onDismissRequest = { showEqualizerDialog = false },
+        title = { Text("5-band equalizer") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Adjust the sound while music is playing. Some devices or audio routes may not expose a compatible equalizer session.", color = Muted, fontSize = 12.sp)
+                listOf("60 Hz", "230 Hz", "910 Hz", "3.6 kHz", "14 kHz").forEachIndexed { band, label ->
+                    Column {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text(label, modifier = Modifier.weight(1f), color = Paper, fontSize = 12.sp)
+                            Text((equalizerLevels[band] * 100f).toInt().toString() + " dB", color = Accent, fontSize = 12.sp)
+                        }
+                        Slider(
+                            value = equalizerLevels[band],
+                            onValueChange = { value ->
+                                val updated = equalizerLevels.toMutableList().also { it[band] = value }
+                                equalizerLevels = updated
+                                context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit()
+                                    .putString("equalizer_levels", updated.joinToString(",")).apply()
+                                context.sendBroadcast(Intent(PlaybackService.ACTION_EQUALIZER).setPackage(context.packageName)
+                                    .putExtra(PlaybackService.EXTRA_BAND, band)
+                                    .putExtra(PlaybackService.EXTRA_LEVEL, (value * 100f).toInt()))
+                            },
+                            valueRange = -15f..15f
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { showEqualizerDialog = false }) { Text("Done") } },
+        dismissButton = { TextButton(onClick = { equalizerLevels = listOf(0f, 0f, 0f, 0f, 0f); context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit().putString("equalizer_levels", "0,0,0,0,0").apply(); equalizerLevels.indices.forEach { band -> context.sendBroadcast(Intent(PlaybackService.ACTION_EQUALIZER).setPackage(context.packageName).putExtra(PlaybackService.EXTRA_BAND, band).putExtra(PlaybackService.EXTRA_LEVEL, 0)) } }) { Text("Reset") } }
+    )
     if (showCreatePlaylist) AlertDialog(
         onDismissRequest = { showCreatePlaylist = false },
         title = { Text("Create playlist") },
