@@ -584,21 +584,32 @@ private fun MusicHome(
                 }) { Icon(Icons.Default.Share, contentDescription = "Share Narsing Music", tint = Accent) }
                 IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, contentDescription = "Rescan music", tint = fg) }
             }
-            if (tab == "HOME") {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("${songs.size} TRACKS", color = subtle, fontSize = 11.sp, letterSpacing = 1.5.sp)
-                Spacer(Modifier.weight(1f))
-                Text(if (sleepTimerMinutes > 0) "SLEEP TIMER · ${sleepTimerMinutes} MIN" else "OFFLINE LIBRARY", color = if (sleepTimerMinutes > 0) Accent else subtle, fontSize = 10.sp, letterSpacing = 1.sp)
-            }
-            Spacer(Modifier.height(12.dp))
             OutlinedTextField(
-                value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search tracks, artists, albums", color = Muted) }, singleLine = true,
-                trailingIcon = { if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Close, contentDescription = "Clear search", tint = subtle) } },
+                value = query,
+                onValueChange = { value ->
+                    query = value
+                    if (value.isNotBlank() && tab == "HOME") {
+                        tab = "TRACKS"
+                        showFavorites = false
+                        activePlaylist = null
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 8.dp),
+                placeholder = { Text("Search tracks, artists, albums", color = Muted) },
+                singleLine = true,
+                trailingIcon = {
+                    if (query.isNotEmpty()) IconButton(onClick = { query = "" }) {
+                        Icon(Icons.Default.Close, contentDescription = "Clear search", tint = subtle)
+                    }
+                },
                 shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = fg, unfocusedTextColor = fg, focusedBorderColor = Accent, unfocusedBorderColor = if (theme == "LIGHT") Color.LightGray else Color.DarkGray, cursorColor = Accent)
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = fg, unfocusedTextColor = fg,
+                    focusedBorderColor = Accent,
+                    unfocusedBorderColor = if (theme == "LIGHT") Color.LightGray else Color.DarkGray,
+                    cursorColor = Accent
+                )
             )
-            Spacer(Modifier.height(10.dp))
             if (tab == "TRACKS") {
                 Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     listOf("ALL" to "All", "SHORT" to "<3 min", "MEDIUM" to "3–6 min", "LONG" to ">6 min").forEach { (filter, label) ->
@@ -610,6 +621,13 @@ private fun MusicHome(
                 }
                 Spacer(Modifier.height(5.dp))
             }
+            if (tab == "HOME") {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("${songs.size} TRACKS", color = subtle, fontSize = 11.sp, letterSpacing = 1.5.sp)
+                Spacer(Modifier.weight(1f))
+                Text(if (sleepTimerMinutes > 0) "SLEEP TIMER · ${sleepTimerMinutes} MIN" else "OFFLINE LIBRARY", color = if (sleepTimerMinutes > 0) Accent else subtle, fontSize = 10.sp, letterSpacing = 1.sp)
+            }
+            Spacer(Modifier.height(12.dp))
             if (tab == "HOME") {
             OutlinedButton(
                 onClick = {
@@ -1184,7 +1202,18 @@ private fun MusicHome(
                     }
                 }
             } else if (filtered.isEmpty()) {
-                EmptyState(if (tab == "RECENT") "NO RECENT TRACKS YET" else "NOTHING IN THE LIBRARY", if (tab == "RECENT") "Play a song and it will appear here." else "Add audio files to your phone, then tap rescan.", "RESCAN LIBRARY", onRefresh)
+                if (query.isNotBlank() && songs.isNotEmpty()) {
+                    EmptyState(
+                        "NO MATCHING TRACKS",
+                        "No song matched \"$query\". Try a different title, artist, or album, or clear your search.",
+                        "CLEAR SEARCH",
+                        { query = ""; durationFilter = "ALL"; showFavorites = false; activePlaylist = null }
+                    )
+                } else if (tab == "RECENT") {
+                    EmptyState("NO RECENT TRACKS YET", "Play a song and it will appear here.", "BROWSE TRACKS", { tab = "TRACKS"; query = "" })
+                } else {
+                    EmptyState("NOTHING IN THE LIBRARY", "Add audio files to your phone, then tap rescan.", "RESCAN LIBRARY", onRefresh)
+                }
             } else {
                 Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                     // Keep the collection heading on its own row so action buttons never squeeze it into vertical text.
