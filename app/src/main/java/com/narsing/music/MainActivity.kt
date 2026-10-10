@@ -907,6 +907,16 @@ private fun MusicHome(
                         Text("${sortedFiltered.size} tracks • ${songs.map { it.artist }.distinct().size} artists", color = subtle, fontSize = 12.sp)
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (tab == "RECENT") {
+                            TextButton(
+                                onClick = {
+                                    recentIds = emptyList()
+                                    context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+                                        .edit().putString("recent_ids", "").apply()
+                                },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+                            ) { Text("CLEAR HISTORY", color = Accent, fontSize = 9.sp, fontWeight = FontWeight.Bold) }
+                        }
                         Button(
                             onClick = { onPlayCollection(sortedFiltered.map { song -> songs.indexOfFirst { it.id == song.id } }.filter { it >= 0 }, false) },
                             enabled = sortedFiltered.isNotEmpty(),
