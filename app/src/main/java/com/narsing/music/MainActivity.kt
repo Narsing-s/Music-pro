@@ -554,6 +554,38 @@ private fun MusicHome(
                             }
                         }
                     }
+                    val dailyMixIndices = (
+                        recentIds.mapNotNull { id -> songs.indexOfFirst { it.id == id }.takeIf { it >= 0 } } +
+                            songs.indices.filter { songs[it].id in favorites } +
+                            songs.indices.sortedByDescending { songs[it].dateAddedSeconds }.take(10)
+                        ).distinct()
+                    Spacer(Modifier.height(8.dp))
+                    Surface(
+                        onClick = {
+                            if (dailyMixIndices.isNotEmpty()) {
+                                query = ""
+                                showFavorites = false
+                                activePlaylist = null
+                                tab = "TRACKS"
+                                onPlayCollection(dailyMixIndices.shuffled(), true)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(color = Accent.copy(alpha = 0.15f), shape = RoundedCornerShape(10.dp)) {
+                                Icon(Icons.Default.Shuffle, contentDescription = null, tint = Accent, modifier = Modifier.padding(9.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("DAILY MIX", color = fg, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.7.sp)
+                                Text("Recent plays + favorites + new tracks", color = subtle, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            Text("${dailyMixIndices.size} tracks", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                     Spacer(Modifier.height(14.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Button(onClick = { if (songs.isNotEmpty()) onPlay(kotlin.random.Random.nextInt(songs.size)) }, colors = ButtonDefaults.buttonColors(containerColor = Accent), shape = RoundedCornerShape(14.dp)) {
