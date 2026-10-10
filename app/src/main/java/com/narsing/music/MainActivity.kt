@@ -675,6 +675,34 @@ private fun MusicHome(
                         }
                         Text("${albumFlowIndices.size}", color = Accent, fontWeight = FontWeight.Bold)
                     }
+                    val focusMixIndices = songs.indices.filter { songs[it].durationMs in 180_000L..360_000L }
+                    Spacer(Modifier.height(8.dp))
+                    Surface(
+                        onClick = {
+                            if (focusMixIndices.isNotEmpty()) {
+                                query = ""
+                                showFavorites = false
+                                activePlaylist = null
+                                tab = "TRACKS"
+                                onPlayCollection(focusMixIndices.shuffled(), true)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(color = Accent.copy(alpha = 0.15f), shape = RoundedCornerShape(10.dp)) {
+                                Icon(Icons.Default.Bedtime, contentDescription = null, tint = Accent, modifier = Modifier.padding(9.dp))
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text("FOCUS MIX", color = fg, fontSize = 12.sp, fontWeight = FontWeight.Black, letterSpacing = 0.7.sp)
+                                Text("3–6 minute tracks for a steady session", color = subtle, fontSize = 11.sp)
+                            }
+                            Text("${focusMixIndices.size} tracks", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                     Spacer(Modifier.height(14.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Button(onClick = { if (songs.isNotEmpty()) onPlay(kotlin.random.Random.nextInt(songs.size)) }, colors = ButtonDefaults.buttonColors(containerColor = Accent), shape = RoundedCornerShape(14.dp)) {
