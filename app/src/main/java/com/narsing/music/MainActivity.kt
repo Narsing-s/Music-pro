@@ -63,6 +63,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -327,6 +334,9 @@ private fun MusicHome(
     var metadataDraftAlbum by remember { mutableStateOf("") }
     var lyricsDialogSong by remember { mutableStateOf<Song?>(null) }
     var lyricsDraft by remember { mutableStateOf("") }
+    var lyricsFetchLoading by remember { mutableStateOf(false) }
+    var lyricsFetchMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
     var selectedTrackIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var deleteSong by remember { mutableStateOf<Song?>(null) }
     val context = LocalContext.current
@@ -1355,6 +1365,63 @@ private fun MusicHome(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Paste your own lyrics or LRC-timestamped lyrics. Saved only on this device.", color = subtle, fontSize = 12.sp)
+                    OutlinedButton(
+                        enabled = !lyricsFetchLoading,
+                        onClick = {
+                            coroutineScope.launch {
+                                lyricsFetchLoading = true
+                                lyricsFetchMessage = null
+                                val result = runCatching {
+                                    withContext(Dispatchers.IO) {
+                                        fun enc(value: String) = URLEncoder.encode(value, "UTF-8")
+                                        val query = "track_name=${enc(song.title)}&artist_name=${enc(song.artist)}" +
+                                            (song.album.takeIf { it.isNotBlank() }?.let { "&album_name=${enc(it)}" } ?: "") +
+                                            "&duration=${(song.durationMs / 1000L).coerceAtLeast(0L)}"
+                                        val connection = (URL("https://lrclib.net/api/get?$query").openConnection() as HttpURLConnection).apply {
+                                            requestMethod = "GET"
+                                            connectTimeout = 8000
+                                            readTimeout = 10000
+                                            setRequestProperty("User-Agent", "MusicPro-Android/1.0")
+                                            setRequestProperty("Accept", "application/json")
+                                        }
+                                        try {
+                                            val code = connection.responseCode
+                                            if (code !in 200..299) error(if (code == 404) "No lyrics found for this track" else "Lyrics service returned HTTP $code")
+                                            val payload = connection.inputStream.bufferedReader().use { it.readText() }
+                                            val json = JSONObject(payload)
+                                            val synced = json.optString("syncedLyrics").trim()
+                                            val plain = json.optString("plainLyrics").trim()
+                                            (synced.ifBlank { plain }).takeIf { it.isNotBlank() }
+                                                ?: error("No lyrics were provided for this track")
+                                        } finally {
+                                            connection.disconnect()
+                                        }
+                                    }
+                                }
+                                result.onSuccess {
+                                    lyricsDraft = it.take(20000)
+                                    lyricsFetchMessage = "Lyrics found. Review them, then tap Save lyrics."
+                                }.onFailure {
+                                    lyricsFetchMessage = it.message ?: "Could not fetch lyrics"
+                                }
+                                lyricsFetchLoading = false
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (lyricsFetchLoading) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(8.dp))
+                            Text("SEARCHING ONLINE…")
+                        } else {
+                            Icon(Icons.Default.Refresh, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text("FIND LYRICS ONLINE")
+                        }
+                    }
+                    lyricsFetchMessage?.let { message ->
+                        Text(message, color = if (message.startsWith("Lyrics found")) Accent else subtle, fontSize = 12.sp)
+                    }
                     OutlinedButton(onClick = { lyricsImportLauncher.launch(arrayOf("text/plain", "application/octet-stream", "application/x-subrip")) }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Default.Folder, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
