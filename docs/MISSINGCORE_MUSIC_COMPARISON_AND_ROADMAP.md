@@ -21,8 +21,8 @@ This review compares Music Pro with [MissingCore/Music](https://github.com/Missi
 | Sleep timer | Implemented in the existing UI using a cancellable Compose effect. | Test cancellation, changing the timer, leaving/re-entering screens, and playback stopping only when the active timer expires. |
 | Metadata editor | App-local title, artist, and album overrides are stored in preferences. | Keep edits app-local and don't imply the underlying audio file was rewritten. |
 | Artwork and appearance | Custom artwork and theme/font preferences are present. | Test missing/unreadable artwork URIs and reset behavior; avoid a broad redesign. |
-| Lyrics | Local lyrics editor/import plus LRC and TTML timed parsing. LRC offset metadata is now supported and tested. | Validate real lyric files, provider/network failures, malformed XML, and synchronized seeking on a device. |
-| M3U playlists | Import/export flows are present. | Test malformed files, duplicate/missing tracks, Unicode titles/paths, empty playlists, and round-trip export/import. |
+| Lyrics | Local lyrics editor/import plus LRC and TTML timed parsing. LRC offset metadata is supported and tested. | Validate real lyric files, provider/network failures, malformed XML, and synchronized seeking on a device. |
+| M3U playlists | Import/export flows are present; export filenames now preserve Unicode and remove filesystem-reserved characters. | Test malformed files, duplicate/missing tracks, Unicode titles/paths, empty playlists, and round-trip export/import. |
 | Multi-select | Selection state exists in the current screen code. | Audit every bulk action for selection cleanup, cancellation safety, and accurate feedback. |
 | Recent listening | A local recent-track list is persisted (up to 30 IDs). | A richer listening recap/play-count view could be a future optional feature, with clear local-data erase controls. |
 | Android Auto | Media3 media-library service and automotive descriptor are declared. | Verify discoverability and playback in Android Auto / Desktop Head Unit; don't change declarations without evidence of a real gap. |
@@ -32,6 +32,7 @@ This review compares Music Pro with [MissingCore/Music](https://github.com/Missi
 
 - Added a dedicated timed-lyrics parser that supports existing LRC timestamps, multiple timestamps on one line, common TTML timed paragraphs, nested span text, and LRC [offset:...] metadata in milliseconds.
 - Added regression tests for LRC timestamps/offsets, TTML paragraphs with nested spans, seconds-based timing, and malformed/untimed input.
+- Hardened M3U export filename handling so Unicode playlist names are preserved and reserved filename characters are removed; added unit tests. Existing export flow and UI remain unchanged.
 - Kept the existing UI and lyric editing flow unchanged. Parsing support still needs real-device validation with actual lyric files.
 
 ## Recommended next steps
