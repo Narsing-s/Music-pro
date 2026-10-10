@@ -74,6 +74,22 @@ Music Pro brings your on-device audio into a focused listening experience with a
   </tr>
 </table>
 
+## 🌐 Online music + offline library
+
+Music Pro adds an **Online** destination for searching and streaming tracks from the Jamendo independent-music catalog while keeping the existing local library and offline playback.
+
+### One-time publisher setup (not required from app users)
+
+1. Create an application in the [Jamendo developer portal](https://developer.jamendo.com/) and obtain a client ID.
+2. Open this repository's **Settings → Secrets and variables → Actions → New repository secret**.
+3. Add the secret named `JAMENDO_CLIENT_ID` with the publisher's client ID.
+4. Run the **Android APK** workflow again and install that new APK.
+5. Users can open **Online**, search, and play music. They never need to paste a developer ID or open developer settings.
+
+The ID is injected at build time. It is an application identifier, not a password. If the secret is absent, the app shows a clear publisher-configuration message rather than prompting every user for credentials. Online availability depends on Jamendo's API, internet access, and the app configuration. Check each track's license and attribution terms before reuse or redistribution.
+
+This is a Spotify-inspired listening experience, not Spotify's licensed catalogue. Spotify's platform policy limits streaming to Premium subscribers and prohibits combining Spotify content with content from another service. Online tracks are not automatically available offline; local files and existing local playlists remain available without internet.
+
 ## 🏠 Home, without the clutter
 
 The Home screen prioritizes search, Quick Access, and Quick Mixes. The large **Surprise Me** promotional button and the redundant track-statistics strip have been removed to reduce visual clutter. Shuffle remains available in the player, where it belongs.
