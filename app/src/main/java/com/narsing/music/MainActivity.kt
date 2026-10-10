@@ -1028,7 +1028,7 @@ private fun MusicHome(
             } else if (!hasPermission && tab != "ONLINE") {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", playing, fg, subtle, Accent, artworkUris["track_${songs.getOrNull(selectedIndex)?.id}"], { tab = "HOME" }, { songs.getOrNull(selectedIndex)?.let { artworkTargetKey = "track_${it.id}"; artworkTargetLabel = it.title; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onShareTrack = {
+                NowPlaying(title, artist, songs.getOrNull(selectedIndex)?.album ?: "ONLINE CATALOG", playing, fg, subtle, Accent, artworkUris["track_${songs.getOrNull(selectedIndex)?.id}"], { tab = "HOME" }, { songs.getOrNull(selectedIndex)?.let { artworkTargetKey = "track_${it.id}"; artworkTargetLabel = it.title; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onShareTrack = {
                     val currentSong = songs.getOrNull(selectedIndex)
                     if (currentSong != null) {
                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -1376,7 +1376,7 @@ private fun MusicHome(
                 }
             } else if (tab == "ONLINE") {
                 Box(Modifier.weight(1f)) {
-                    OnlineCatalogScreen(foreground = fg, muted = subtle, accent = Accent, panel = Panel, onPlayOnline = onPlayOnline)
+                    OnlineCatalogScreen(foreground = fg, muted = subtle, accent = Accent, panel = Panel, onPlayOnline = { url, trackTitle, trackArtist, artwork -> onPlayOnline(url, trackTitle, trackArtist, artwork); tab = "NOW PLAYING" })
                 }
             } else if (filtered.isEmpty()) {
                 if (query.isNotBlank() && songs.isNotEmpty()) {
