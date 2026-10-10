@@ -351,6 +351,10 @@ private fun MusicHome(
     var artworkTargetKey by remember { mutableStateOf<String?>(null) }
     var artworkTargetLabel by remember { mutableStateOf("") }
     var artworkUris by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var insightRefreshVersion by remember { mutableIntStateOf(0) }
+    var activeSessionListenMs by remember(selectedIndex) { mutableLongStateOf(0L) }
+    var activeSessionCounted by remember(selectedIndex) { mutableStateOf(false) }
+    val insightRows = remember(songs, insightRefreshVersion) { ListeningInsightsStore.snapshot(context, songs) }
 
     val artworkPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { selectedUri ->
         val targetKey = artworkTargetKey
@@ -503,6 +507,31 @@ private fun MusicHome(
         recentIds = (listOf(song.id) + recentIds.filter { it != song.id }).take(30)
         context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
             .edit().putString("recent_ids", recentIds.joinToString(",")).apply()
+    }
+    LaunchedEffect(selectedIndex, playing, songs) {
+        val song = songs.getOrNull(selectedIndex) ?: return@LaunchedEffect
+        if (!playing) return@LaunchedEffect
+        var pendingMs = 0L
+        try {
+            while (true) {
+                delay(1_000L)
+                activeSessionListenMs += 1_000L
+                pendingMs += 1_000L
+                if (pendingMs >= 10_000L) {
+                    ListeningInsightsStore.addListeningTime(context, song, pendingMs)
+                    pendingMs = 0L
+                    insightRefreshVersion++
+                }
+                if (!activeSessionCounted && activeSessionListenMs >= 30_000L) {
+                    ListeningInsightsStore.recordPlay(context, song)
+                    activeSessionCounted = true
+                    insightRefreshVersion++
+                }
+            }
+        } finally {
+            if (pendingMs > 0L) ListeningInsightsStore.addListeningTime(context, song, pendingMs)
+            insightRefreshVersion++
+        }
     }
     LaunchedEffect(sortMode, preferencesLoaded) {
         if (preferencesLoaded) context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
@@ -984,6 +1013,66 @@ private fun MusicHome(
                         runCatching { context.startActivity(Intent.createChooser(shareIntent, "Share listening card")) }
                     }
                 }, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true, lyricsText = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${it.id}", "") }.orEmpty())
+            } else if (tab == "INSIGHTS") {
+                val topTracks = insightRows.filter { it.playCount > 0 || it.listenedMs > 0L }
+                    .sortedWith(compareByDescending<ListeningInsight> { it.playCount }.thenByDescending { it.listenedMs })
+                    .take(30)
+                LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
+                    item {
+                        Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("YOUR LISTENING", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black)
+                                Text("Private by design · stored only on this device", color = subtle, fontSize = 11.sp)
+                            }
+                            TextButton(onClick = {
+                                ListeningInsightsStore.clear(context)
+                                insightRefreshVersion++
+                                Toast.makeText(context, "Listening insights cleared", Toast.LENGTH_SHORT).show()
+                            }) { Text("CLEAR DATA", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                        }
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            listOf(
+                                "TRACK PLAYS" to insightRows.sumOf { it.playCount }.toString(),
+                                "LISTENING TIME" to formatDuration(insightRows.sumOf { it.listenedMs })
+                            ).forEach { stat ->
+                                Surface(Modifier.weight(1f), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(14.dp)) {
+                                    Column(Modifier.padding(14.dp)) {
+                                        Text(stat.first, color = subtle, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.7.sp)
+                                        Text(stat.second, color = Accent, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(18.dp))
+                        Text("MOST PLAYED", color = fg, fontSize = 13.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                        Spacer(Modifier.height(6.dp))
+                    }
+                    if (topTracks.isEmpty()) {
+                        item {
+                            Column(Modifier.fillMaxWidth().padding(vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(Icons.Default.MusicNote, contentDescription = null, tint = Accent, modifier = Modifier.size(38.dp))
+                                Spacer(Modifier.height(10.dp))
+                                Text("YOUR STORY STARTS HERE", color = fg, fontWeight = FontWeight.Black)
+                                Spacer(Modifier.height(6.dp))
+                                Text("Play a track for 30 seconds to count a play. Listening time is saved locally.", color = subtle, fontSize = 12.sp)
+                            }
+                        }
+                    } else {
+                        itemsIndexed(topTracks, key = { _, insight -> insight.songId }) { index, insight ->
+                            Row(Modifier.fillMaxWidth().padding(vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Text((index + 1).toString().padStart(2, '0'), color = Accent, fontSize = 13.sp, fontWeight = FontWeight.Black, modifier = Modifier.width(32.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text(insight.title, color = fg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text("${insight.artist} · ${insight.album}", color = subtle, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text("${insight.playCount} plays · ${formatDuration(insight.listenedMs)} listened", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                }
+                            }
+                            HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
+                        }
+                    }
+                }
             } else if (tab == "ARTISTS") {
                 val artists = songs.flatMap { splitArtists(it.artist.ifBlank { "Unknown artist" }) }.distinctBy { it.lowercase() }.sortedBy { it.lowercase() }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
@@ -1275,7 +1364,7 @@ private fun MusicHome(
                 Spacer(Modifier.height(4.dp))
                 Surface(color = if (theme == "LIGHT") Color(0xFFF4F1E8) else Color(0xFF111111), shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp), modifier = Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 2.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
-                        listOf("HOME", "TRACKS", "ALBUMS", "PLAYLISTS", "ARTISTS", "GENRES", "FOLDERS", "RECENT", "FAVORITES").forEach { label ->
+                        listOf("HOME", "TRACKS", "ALBUMS", "PLAYLISTS", "ARTISTS", "GENRES", "FOLDERS", "RECENT", "FAVORITES", "INSIGHTS").forEach { label ->
                             val active = tab == label
                             Surface(color = if (active) Accent else Color.Transparent, shape = RoundedCornerShape(11.dp), modifier = Modifier.clickable {
                                 tab = label
@@ -1284,7 +1373,7 @@ private fun MusicHome(
                                 if (label == "TRACKS") query = ""
                             }) {
                                 Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(when (label) { "HOME" -> Icons.Default.Home; "TRACKS" -> Icons.Default.MusicNote; "ALBUMS" -> Icons.Default.Album; "PLAYLISTS" -> Icons.Default.QueueMusic; "ARTISTS" -> Icons.Default.MusicNote; "GENRES" -> Icons.Default.MusicNote; "FOLDERS" -> Icons.Default.Folder; "RECENT" -> Icons.Default.MusicNote; else -> Icons.Default.Favorite }, contentDescription = null, tint = if (active) Color.White else subtle, modifier = Modifier.size(17.dp))
+                                    Icon(when (label) { "HOME" -> Icons.Default.Home; "TRACKS" -> Icons.Default.MusicNote; "ALBUMS" -> Icons.Default.Album; "PLAYLISTS" -> Icons.Default.QueueMusic; "ARTISTS" -> Icons.Default.MusicNote; "GENRES" -> Icons.Default.MusicNote; "FOLDERS" -> Icons.Default.Folder; "RECENT" -> Icons.Default.MusicNote; "INSIGHTS" -> Icons.Default.Info; else -> Icons.Default.Favorite }, contentDescription = null, tint = if (active) Color.White else subtle, modifier = Modifier.size(17.dp))
                                     Text(if (label == "FAVORITES") "Saved" else label.lowercase().replaceFirstChar { it.uppercase() }, color = if (active) Color.White else subtle, fontSize = 9.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
                                 }
                             }
