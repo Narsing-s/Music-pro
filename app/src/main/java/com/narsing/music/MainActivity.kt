@@ -5,6 +5,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.app.Activity
+import android.provider.MediaStore
+import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -88,6 +93,9 @@ class MainActivity : ComponentActivity() {
                     if (!hasPermission) permissionLauncher.launch(permission) else refreshLibrary()
                     connectController()
                 }
+                val deleteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+                    if (result.resultCode == Activity.RESULT_OK) refreshLibrary()
+                }
                 MusicHome(
                     songs, selectedIndex, isPlaying, currentTitle, currentArtist, hasPermission,
                     onGrant = { permissionLauncher.launch(permission) },
@@ -102,7 +110,8 @@ class MainActivity : ComponentActivity() {
                     onShuffle = { enabled -> mediaController?.shuffleModeEnabled = enabled },
                     onRepeat = { enabled -> mediaController?.repeatMode = if (enabled) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF },
                     onProgress = { playbackProgress() },
-                    onSeek = { position -> mediaController?.seekTo(position) }
+                    onSeek = { position -> mediaController?.seekTo(position) },
+                    onDelete = { song -> requestDeleteSong(song, deleteLauncher) }
                 )
             }
         }
@@ -158,6 +167,30 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun requestDeleteSong(song: Song, launcher: ActivityResultLauncher<IntentSenderRequest>) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            runCatching {
+                val request = MediaStore.createDeleteRequest(contentResolver, listOf(song.uri))
+                launcher.launch(IntentSenderRequest.Builder(request.intentSender).build())
+            }.onFailure {
+                Toast.makeText(this, "Unable to request deletion for this audio file", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            try {
+                val deleted = contentResolver.delete(song.uri, null, null)
+                if (deleted > 0) refreshLibrary()
+                else Toast.makeText(this, "The file could not be deleted. Check storage access.", Toast.LENGTH_LONG).show()
+            } catch (security: SecurityException) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && security is android.app.RecoverableSecurityException) {
+                    runCatching { launcher.launch(IntentSenderRequest.Builder(security.userAction.actionIntent.intentSender).build()) }
+                        .onFailure { Toast.makeText(this, "Deletion permission was not granted", Toast.LENGTH_LONG).show() }
+                } else {
+                    Toast.makeText(this, "Android denied deletion. Use your file manager to remove this file.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
     private fun shareSong(song: Song) {
         val sendIntent = Intent(Intent.ACTION_SEND).apply {
             type = "audio/*"
@@ -189,7 +222,8 @@ private fun MusicHome(
     hasPermission: Boolean, onGrant: () -> Unit, onRefresh: () -> Unit,
     onPlay: (Int) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
     onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit,
-    onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit
+    onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit,
+    onDelete: (Song) -> Unit
 ) {
     var tab by remember { mutableStateOf("HOME") }
     var query by remember { mutableStateOf("") }
@@ -209,6 +243,7 @@ private fun MusicHome(
     var activePlaylist by remember { mutableStateOf<String?>(null) }
     var addToPlaylistSong by remember { mutableStateOf<Song?>(null) }
     var detailsSong by remember { mutableStateOf<Song?>(null) }
+    var deleteSong by remember { mutableStateOf<Song?>(null) }
     val context = LocalContext.current
     var preferencesLoaded by remember { mutableStateOf(false) }
     var playbackPosition by remember { mutableLongStateOf(0L) }
@@ -522,6 +557,7 @@ private fun MusicHome(
                                     DropdownMenuItem(text = { Text("Play next") }, onClick = { onPlayNext(originalIndex); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Track details") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { detailsSong = song; addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Share audio") }, leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) }, onClick = { onShare(song); addToPlaylistSong = null })
+                                    DropdownMenuItem(text = { Text("Delete from device", color = Color(0xFFE84B35)) }, onClick = { deleteSong = song; addToPlaylistSong = null })
                                     if (playlists.isEmpty()) DropdownMenuItem(text = { Text("Create playlist first") }, onClick = { addToPlaylistSong = null; tab = "PLAYLISTS"; showCreatePlaylist = true })
                                     playlists.keys.sorted().forEach { name -> DropdownMenuItem(text = { Text(if (song.id in playlists[name].orEmpty()) "✓ $name" else name) }, onClick = { val ids = playlists[name].orEmpty(); playlists = playlists + (name to if (song.id in ids) ids else ids + song.id); addToPlaylistSong = null }) }
                                 }
@@ -550,6 +586,19 @@ private fun MusicHome(
                 }
             }
         }
+    }
+    deleteSong?.let { song ->
+        AlertDialog(
+            onDismissRequest = { deleteSong = null },
+            title = { Text("Delete this song?") },
+            text = { Text("“${song.title}” will be removed from your device. This cannot be undone.") },
+            confirmButton = {
+                TextButton(onClick = { onDelete(song); deleteSong = null }) {
+                    Text("Delete song", color = Color(0xFFE84B35))
+                }
+            },
+            dismissButton = { TextButton(onClick = { deleteSong = null }) { Text("Cancel") } }
+        )
     }
     detailsSong?.let { song ->
         AlertDialog(
