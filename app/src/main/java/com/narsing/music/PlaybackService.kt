@@ -16,6 +16,7 @@ class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private var player: ExoPlayer? = null
     private var equalizer: Equalizer? = null
+    private var equalizerSessionId: Int = 0
 
     private val equalizerReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -23,9 +24,10 @@ class PlaybackService : MediaSessionService() {
             val sessionId = currentPlayer.audioSessionId
             if (sessionId <= 0) return
             runCatching {
-                if (equalizer == null || equalizer?.audioSession != sessionId) {
+                if (equalizer == null || equalizerSessionId != sessionId) {
                     equalizer?.release()
                     equalizer = Equalizer(0, sessionId).apply { enabled = true }
+                    equalizerSessionId = sessionId
                 }
                 val effect = equalizer ?: return
                 val band = intent.getIntExtra(EXTRA_BAND, -1)
@@ -53,6 +55,7 @@ class PlaybackService : MediaSessionService() {
         runCatching { unregisterReceiver(equalizerReceiver) }
         equalizer?.release()
         equalizer = null
+        equalizerSessionId = 0
         mediaSession?.release()
         mediaSession = null
         player?.release()
