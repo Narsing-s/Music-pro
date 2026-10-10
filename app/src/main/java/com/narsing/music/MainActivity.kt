@@ -319,7 +319,7 @@ private fun MusicHome(
     onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit, onSpeed: (Float) -> Unit,
     onDelete: (Song) -> Unit, onGetQueue: () -> List<QueueEntry>, onPlayQueueItem: (Int) -> Unit, onRemoveQueueItem: (Int) -> Unit, onMoveQueueItem: (Int, Int) -> Unit
 ) {
-    var tab by remember { mutableStateOf("HOME") }
+    var tab by remember { mutableStateOf("ONLINE") }
     var query by remember { mutableStateOf("") }
     var durationFilter by remember { mutableStateOf("ALL") }
     var theme by remember { mutableStateOf("DARK") }
