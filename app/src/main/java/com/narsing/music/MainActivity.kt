@@ -512,6 +512,31 @@ private fun MusicHome(
                             Text("ALL TRACKS", color = fg, fontWeight = FontWeight.Bold)
                         }
                     }
+                    val recentTrackIndices = recentIds.mapNotNull { recentId -> songs.indexOfFirst { it.id == recentId }.takeIf { it >= 0 } }
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = {
+                            if (recentTrackIndices.isNotEmpty()) {
+                                tab = "TRACKS"
+                                showFavorites = false
+                                activePlaylist = null
+                                onPlayCollection(recentTrackIndices, false)
+                            } else if (selectedIndex >= 0) {
+                                onPlay(selectedIndex)
+                            }
+                        },
+                        enabled = recentTrackIndices.isNotEmpty() || selectedIndex >= 0,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        contentPadding = PaddingValues(vertical = 12.dp)
+                    ) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Accent)
+                        Spacer(Modifier.width(8.dp))
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Text("PICK UP WHERE YOU LEFT OFF", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                            Text(if (recentTrackIndices.isNotEmpty()) "${recentTrackIndices.size} recently played tracks" else "Resume your current track", color = subtle, fontSize = 11.sp)
+                        }
+                    }
                     Spacer(Modifier.height(14.dp))
                     if (selectedIndex >= 0 && songs.getOrNull(selectedIndex) != null) {
                         val currentSong = songs[selectedIndex]
