@@ -280,6 +280,8 @@ private fun MusicHome(
     var activePlaylist by remember { mutableStateOf<String?>(null) }
     var addToPlaylistSong by remember { mutableStateOf<Song?>(null) }
     var detailsSong by remember { mutableStateOf<Song?>(null) }
+    var lyricsDialogSong by remember { mutableStateOf<Song?>(null) }
+    var lyricsDraft by remember { mutableStateOf("") }
     var deleteSong by remember { mutableStateOf<Song?>(null) }
     val context = LocalContext.current
     var preferencesLoaded by remember { mutableStateOf(false) }
@@ -829,7 +831,7 @@ private fun MusicHome(
             } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } })
+                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true)
             } else if (tab == "ARTISTS") {
                 val artists = songs.map { it.artist.ifBlank { "Unknown artist" } }.distinct().sortedBy { it.lowercase() }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
@@ -1106,6 +1108,42 @@ private fun MusicHome(
             confirmButton = { TextButton(onClick = { detailsSong = null }) { Text("Done") } }
         )
     }
+    lyricsDialogSong?.let { song ->
+        AlertDialog(
+            onDismissRequest = { lyricsDialogSong = null },
+            title = { Text("Lyrics · ${song.title}", maxLines = 2, overflow = TextOverflow.Ellipsis) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Paste your own lyrics or LRC-timestamped lyrics. Saved only on this device.", color = subtle, fontSize = 12.sp)
+                    OutlinedTextField(
+                        value = lyricsDraft,
+                        onValueChange = { lyricsDraft = it.take(20000) },
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 180.dp, max = 360.dp),
+                        placeholder = { Text("Paste lyrics here…\n\n[00:12.00] First line") },
+                        minLines = 6,
+                        maxLines = 14
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+                        .edit().putString("lyrics_${song.id}", lyricsDraft.trim()).apply()
+                    lyricsDialogSong = null
+                }) { Text("Save lyrics") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+                            .edit().remove("lyrics_${song.id}").apply()
+                        lyricsDraft = ""
+                    }) { Text("Clear") }
+                    TextButton(onClick = { lyricsDialogSong = null }) { Text("Cancel") }
+                }
+            }
+        )
+    }
     if (showCreatePlaylist) AlertDialog(
         onDismissRequest = { showCreatePlaylist = false },
         title = { Text("Create playlist") },
@@ -1116,7 +1154,7 @@ private fun MusicHome(
 }
 
 @Composable
-private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit) {
+private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit, onOpenLyrics: () -> Unit, hasLyrics: Boolean) {
     var speedMenuExpanded by remember { mutableStateOf(false) }
     val recordMotion = rememberInfiniteTransition(label = "vinyl-record")
     val recordRotation = recordMotion.animateFloat(
@@ -1157,6 +1195,7 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
                 Text(title, color = foreground, fontSize = 24.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                 Text(artist, color = subtleColor, fontSize = 14.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
                 Text(album.uppercase(), color = accentColor, fontSize = 10.sp, letterSpacing = 2.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+                TextButton(onClick = onOpenLyrics, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)) { Text(if (hasLyrics) "VIEW / EDIT LYRICS" else "ADD LYRICS", color = accentColor, fontSize = 10.sp, letterSpacing = 1.sp) }
             }
             IconButton(onClick = onToggleFavorite) { Icon(if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites", tint = if (isFavorite) accentColor else subtleColor) }
         }
