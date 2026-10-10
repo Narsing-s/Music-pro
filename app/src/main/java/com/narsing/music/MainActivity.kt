@@ -89,6 +89,7 @@ class MainActivity : ComponentActivity() {
                     onRefresh = { refreshLibrary() },
                     onPlay = { playAt(it) },
                     onToggle = { togglePlayback() },
+                    onStop = { mediaController?.pause() },
                     onNext = { mediaController?.let { if (it.hasNextMediaItem()) it.seekToNextMediaItem() else if (songs.isNotEmpty()) it.seekTo(0, 0L) } },
                     onPrevious = { mediaController?.let { if (it.currentPosition > 3_000L) it.seekTo(0) else if (it.hasPreviousMediaItem()) it.seekToPreviousMediaItem() else if (songs.isNotEmpty()) it.seekTo(songs.lastIndex, 0L) } },
                     onShuffle = { enabled -> mediaController?.shuffleModeEnabled = enabled },
@@ -148,7 +149,7 @@ class MainActivity : ComponentActivity() {
 private fun MusicHome(
     songs: List<Song>, selectedIndex: Int, playing: Boolean, title: String, artist: String,
     hasPermission: Boolean, onGrant: () -> Unit, onRefresh: () -> Unit,
-    onPlay: (Int) -> Unit, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
+    onPlay: (Int) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
     onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit
 ) {
     var tab by remember { mutableStateOf("HOME") }
@@ -183,7 +184,7 @@ private fun MusicHome(
     LaunchedEffect(sleepTimerMinutes) {
         if (sleepTimerMinutes > 0) {
             delay(sleepTimerMinutes * 60_000L)
-            if (playing) onToggle()
+            onStop()
             sleepTimerMinutes = 0
         }
     }
