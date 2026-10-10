@@ -1269,7 +1269,7 @@ private fun MusicHome(
                                 if (label == "TRACKS") query = ""
                             }) {
                                 Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(when (label) { "HOME" -> Icons.Default.Home; "TRACKS" -> Icons.Default.MusicNote; "ALBUMS" -> Icons.Default.Album; "PLAYLISTS" -> Icons.Default.QueueMusic; "ARTISTS" -> Icons.Default.MusicNote; "GENRES" -> Icons.Default.MusicNote; "FOLDERS" -> Icons.Default.Folder; "RECENT" -> Icons.Default.AccessTime; else -> Icons.Default.Favorite }, contentDescription = null, tint = if (active) Color.White else subtle, modifier = Modifier.size(17.dp))
+                                    Icon(when (label) { "HOME" -> Icons.Default.Home; "TRACKS" -> Icons.Default.MusicNote; "ALBUMS" -> Icons.Default.Album; "PLAYLISTS" -> Icons.Default.QueueMusic; "ARTISTS" -> Icons.Default.MusicNote; "GENRES" -> Icons.Default.MusicNote; "FOLDERS" -> Icons.Default.Folder; "RECENT" -> Icons.Default.MusicNote; else -> Icons.Default.Favorite }, contentDescription = null, tint = if (active) Color.White else subtle, modifier = Modifier.size(17.dp))
                                     Text(if (label == "FAVORITES") "Saved" else label.lowercase().replaceFirstChar { it.uppercase() }, color = if (active) Color.White else subtle, fontSize = 9.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
                                 }
                             }
