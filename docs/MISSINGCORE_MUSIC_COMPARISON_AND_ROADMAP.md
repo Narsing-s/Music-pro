@@ -33,12 +33,13 @@ This review compares Music Pro with [MissingCore/Music](https://github.com/Missi
 - Added a dedicated timed-lyrics parser that supports existing LRC timestamps, multiple timestamps on one line, common TTML timed paragraphs, nested span text, and LRC [offset:...] metadata in milliseconds.
 - Added regression tests for LRC timestamps/offsets, TTML paragraphs with nested spans, seconds-based timing, and malformed/untimed input.
 - Hardened M3U export filename handling so Unicode playlist names are preserved and reserved filename characters are removed; added unit tests. Existing export flow and UI remain unchanged.
+- Added a dedicated M3U serializer and regression tests so CR/LF characters inside track titles or artists cannot inject fake playlist entries; preserves Unicode and Android media URIs, and clamps negative durations to zero. The existing export UI and workflow remain unchanged.
 - Kept the existing UI and lyric editing flow unchanged. Parsing support still needs real-device validation with actual lyric files.
 
 ## Recommended next steps
 
 1. **Reliability first:** test playback, queue edge cases, widget state, equalizer persistence, timer cancellation, permission recovery, and headphone/Bluetooth interruptions.
-2. **Playlist portability:** harden M3U import/export with tests for malformed input, Unicode, missing media, and duplicates.
+2. **Playlist portability:** the export serializer now handles multiline metadata safely; next, test M3U import/export with malformed input, missing media, duplicates, and round-trip compatibility.
 3. **Listening insights:** if added later, make play history opt-in or clearly disclosed, local-only, and easy to clear; don't add network tracking.
 4. **Automotive verification:** test the existing Media3 integration before changing service declarations.
 5. **Accessibility and resilience:** verify touch targets, content descriptions, long-title handling, reduced-animation behavior, and empty/error states without changing the visual design.
