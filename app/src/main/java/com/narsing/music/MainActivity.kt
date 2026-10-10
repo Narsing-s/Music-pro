@@ -50,6 +50,7 @@ import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -326,7 +327,7 @@ private fun MusicHome(
                     when {
                         line.startsWith("#EXTINF:", ignoreCase = true) -> pendingTitle = line.substringAfter(',', "").trim()
                         line.isNotEmpty() && !line.startsWith("#") -> {
-                            val exact = songs.firstOrNull { it.uri.toString() == line }
+                            val exact = songs.firstOrNull { it.uri.toString() == line || it.filePath.equals(line.removePrefix("file://"), ignoreCase = true) || (line.startsWith("/") && it.filePath.endsWith(line, ignoreCase = true)) }
                             val titleAndArtist = pendingTitle?.split(" - ", limit = 2)
                             val match = exact ?: songs.firstOrNull { song ->
                                 titleAndArtist?.getOrNull(0)?.equals(song.title, ignoreCase = true) == true &&
@@ -551,7 +552,7 @@ private fun MusicHome(
             }
             Spacer(Modifier.height(14.dp))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("HOME", "TRACKS", "ARTISTS", "ALBUMS", "RECENT", "PLAYLISTS", "FAVORITES", "NOW PLAYING").forEach { label ->
+                listOf("HOME", "TRACKS", "ARTISTS", "ALBUMS", "FOLDERS", "RECENT", "PLAYLISTS", "FAVORITES", "NOW PLAYING").forEach { label ->
                     val active = tab == label
                     Surface(color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(50), modifier = Modifier.clickable { tab = label; showFavorites = label == "FAVORITES" }) {
                         Text(label, color = if (active) Color.White else subtle, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
@@ -928,6 +929,30 @@ private fun MusicHome(
                                 Text("${albumSongs.size} tracks • ${albumSongs.firstOrNull()?.artist ?: "Unknown artist"}", color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             Icon(Icons.Default.PlayArrow, contentDescription = "Play album", tint = Accent)
+                        }
+                        HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
+                    }
+                }
+            } else if (tab == "FOLDERS") {
+                val folders = songs.groupBy { song ->
+                    song.filePath.substringBeforeLast('/', "").substringAfterLast('/').ifBlank { "Unknown folder" }
+                }.toList().sortedBy { it.first.lowercase() }
+                LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
+                    item { Text("BROWSE FOLDERS", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 10.dp)) }
+                    itemsIndexed(folders, key = { _, folder -> folder.first }) { _, folder ->
+                        Row(Modifier.fillMaxWidth().clickable {
+                            val indices = folder.second.mapNotNull { song -> songs.indexOfFirst { it.id == song.id }.takeIf { it >= 0 } }
+                            if (indices.isNotEmpty()) onPlayCollection(indices, false)
+                        }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
+                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Folder, contentDescription = null, tint = Accent, modifier = Modifier.size(26.dp)) }
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(folder.first, color = fg, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text("${folder.second.size} tracks", color = subtle, fontSize = 12.sp)
+                            }
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Play folder", tint = Accent)
                         }
                         HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
                     }
