@@ -320,20 +320,20 @@ private fun MusicHome(
     var showQueueDialog by remember { mutableStateOf(false) }
     var queueEntries by remember { mutableStateOf<List<QueueEntry>>(emptyList()) }
     var pendingExportPlaylistName by remember { mutableStateOf<String?>(null) }
-    var artworkTargetSong by remember { mutableStateOf<Song?>(null) }
-    var artworkUris by remember { mutableStateOf<Map<Long, String>>(emptyMap()) }
+    var artworkTargetKey by remember { mutableStateOf<String?>(null) }
+    var artworkTargetLabel by remember { mutableStateOf("") }
+    var artworkUris by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
 
     val artworkPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { selectedUri ->
-        val target = artworkTargetSong
-        artworkTargetSong = null
-        if (selectedUri != null && target != null) {
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(selectedUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            artworkUris = artworkUris + (target.id to selectedUri.toString())
+        val targetKey = artworkTargetKey
+        val targetLabel = artworkTargetLabel
+        artworkTargetKey = null
+        if (selectedUri != null && targetKey != null) {
+            runCatching { context.contentResolver.takePersistableUriPermission(selectedUri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            artworkUris = artworkUris + (targetKey to selectedUri.toString())
             context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit()
-                .putString("artwork_${target.id}", selectedUri.toString()).apply()
-            Toast.makeText(context, "Artwork updated for ${target.title}", Toast.LENGTH_SHORT).show()
+                .putString("artwork_$targetKey", selectedUri.toString()).apply()
+            Toast.makeText(context, "Artwork updated for $targetLabel", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -401,7 +401,8 @@ private fun MusicHome(
 
     LaunchedEffect(songs) {
         val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
-        artworkUris = songs.mapNotNull { song -> prefs.getString("artwork_${song.id}", null)?.let { song.id to it } }.toMap()
+        artworkUris = prefs.all.entries.filter { it.key.startsWith("artwork_") && it.value is String }
+            .associate { it.key.removePrefix("artwork_") to (it.value as String) }
     }
 
     // Keep personal UI preferences on-device. No library files or playback data are moved.
@@ -937,7 +938,7 @@ private fun MusicHome(
             } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, artworkUris[songs.getOrNull(selectedIndex)?.id], { songs.getOrNull(selectedIndex)?.let { artworkTargetSong = it; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true, lyricsText = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${it.id}", "") }.orEmpty())
+                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, artworkUris["track_${songs.getOrNull(selectedIndex)?.id}"], { songs.getOrNull(selectedIndex)?.let { artworkTargetKey = "track_${it.id}"; artworkTargetLabel = it.title; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true, lyricsText = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${it.id}", "") }.orEmpty())
             } else if (tab == "ARTISTS") {
                 val artists = songs.flatMap { splitArtists(it.artist.ifBlank { "Unknown artist" }) }.distinctBy { it.lowercase() }.sortedBy { it.lowercase() }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
@@ -1171,8 +1172,8 @@ private fun MusicHome(
                                     DropdownMenuItem(text = { Text("Play next") }, onClick = { onPlayNext(originalIndex); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Track details") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { detailsSong = song; addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Edit metadata") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { metadataDraftTitle = song.title; metadataDraftArtist = song.artist; metadataDraftAlbum = song.album; editMetadataSong = song; addToPlaylistSong = null })
-                                    DropdownMenuItem(text = { Text(if (artworkUris.containsKey(song.id)) "Change artwork" else "Set custom artwork") }, leadingIcon = { Icon(Icons.Default.Album, contentDescription = null) }, onClick = { artworkTargetSong = song; addToPlaylistSong = null; artworkPickerLauncher.launch(arrayOf("image/*")) })
-                                    if (artworkUris.containsKey(song.id)) DropdownMenuItem(text = { Text("Remove custom artwork") }, onClick = { artworkUris = artworkUris - song.id; context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit().remove("artwork_${song.id}").apply(); addToPlaylistSong = null })
+                                    DropdownMenuItem(text = { Text(if (artworkUris.containsKey("track_${song.id}")) "Change artwork" else "Set custom artwork") }, leadingIcon = { Icon(Icons.Default.Album, contentDescription = null) }, onClick = { artworkTargetKey = "track_${song.id}"; artworkTargetLabel = song.title; addToPlaylistSong = null; artworkPickerLauncher.launch(arrayOf("image/*")) })
+                                    if (artworkUris.containsKey(song.id)) DropdownMenuItem(text = { Text("Remove custom artwork") }, onClick = { artworkUris = artworkUris - "track_${song.id}"; context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit().remove("artwork_track_${song.id}").apply(); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Share audio") }, leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) }, onClick = { onShare(song); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Delete from device", color = Color(0xFFE84B35)) }, onClick = { deleteSong = song; addToPlaylistSong = null })
                                     if (playlists.isEmpty()) DropdownMenuItem(text = { Text("Create playlist first") }, onClick = { addToPlaylistSong = null; tab = "PLAYLISTS"; showCreatePlaylist = true })
