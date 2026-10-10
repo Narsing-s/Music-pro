@@ -69,6 +69,8 @@ private val Paper = Color(0xFFF4F1E8)
 private val Muted = Color(0xFF9B9B95)
 private val Accent = Color(0xFFE84B35)
 
+private data class QueueEntry(val index: Int, val title: String, val artist: String, val isCurrent: Boolean)
+
 class MainActivity : ComponentActivity() {
     private var mediaController: MediaController? = null
     private var controllerFuture: ListenableFuture<MediaController>? = null
@@ -113,7 +115,13 @@ class MainActivity : ComponentActivity() {
                     onProgress = { playbackProgress() },
                     onSeek = { position -> mediaController?.seekTo(position) },
                     onSpeed = { speed -> mediaController?.setPlaybackSpeed(speed) },
-                    onDelete = { song -> requestDeleteSong(song, deleteLauncher) }
+                    onDelete = { song -> requestDeleteSong(song, deleteLauncher) },
+                    onGetQueue = { mediaController?.let { controller -> (0 until controller.mediaItemCount).map { index ->
+                        val item = controller.getMediaItemAt(index)
+                        QueueEntry(index, item.mediaMetadata.title?.toString().orEmpty().ifBlank { "Unknown track" }, item.mediaMetadata.artist?.toString().orEmpty().ifBlank { "Unknown artist" }, index == controller.currentMediaItemIndex)
+                    } } ?: emptyList() },
+                    onPlayQueueItem = { index -> mediaController?.let { it.seekTo(index, 0L); it.play() } },
+                    onRemoveQueueItem = { index -> mediaController?.let { controller -> if (index in 0 until controller.mediaItemCount) controller.removeMediaItem(index) } }
                 )
             }
         }
@@ -242,7 +250,7 @@ private fun MusicHome(
     onPlay: (Int) -> Unit, onPlayCollection: (List<Int>, Boolean) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
     onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit,
     onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit, onSpeed: (Float) -> Unit,
-    onDelete: (Song) -> Unit
+    onDelete: (Song) -> Unit, onGetQueue: () -> List<QueueEntry>, onPlayQueueItem: (Int) -> Unit, onRemoveQueueItem: (Int) -> Unit
 ) {
     var tab by remember { mutableStateOf("HOME") }
     var query by remember { mutableStateOf("") }
@@ -268,6 +276,8 @@ private fun MusicHome(
     var playbackPosition by remember { mutableLongStateOf(0L) }
     var playbackDuration by remember { mutableLongStateOf(0L) }
     var playbackSpeed by remember { mutableFloatStateOf(1f) }
+    var showQueueDialog by remember { mutableStateOf(false) }
+    var queueEntries by remember { mutableStateOf<List<QueueEntry>>(emptyList()) }
 
     LaunchedEffect(selectedIndex, playing) {
         while (selectedIndex >= 0) {
@@ -469,7 +479,7 @@ private fun MusicHome(
             } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it })
+                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true })
             } else if (tab == "ARTISTS") {
                 val artists = songs.map { it.artist.ifBlank { "Unknown artist" } }.distinct().sortedBy { it.lowercase() }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
@@ -627,6 +637,29 @@ private fun MusicHome(
             }
         }
     }
+    if (showQueueDialog) AlertDialog(
+        onDismissRequest = { showQueueDialog = false },
+        title = { Text("Up next · ${queueEntries.size} tracks") },
+        text = {
+            if (queueEntries.isEmpty()) Text("Your playback queue is empty.")
+            else LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+                itemsIndexed(queueEntries, key = { _, item -> item.index }) { _, entry ->
+                    Row(Modifier.fillMaxWidth().clickable {
+                        onPlayQueueItem(entry.index)
+                        queueEntries = onGetQueue()
+                    }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(if (entry.isCurrent) "▶  ${entry.title}" else entry.title, color = if (entry.isCurrent) Accent else fg, fontWeight = if (entry.isCurrent) FontWeight.Bold else FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(entry.artist, color = subtle, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        TextButton(onClick = { onRemoveQueueItem(entry.index); queueEntries = onGetQueue() }) { Text("REMOVE", color = Accent, fontSize = 10.sp) }
+                    }
+                    HorizontalDivider(color = Color(0xFF292929))
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { showQueueDialog = false }) { Text("Done") } }
+    )
     deleteSong?.let { song ->
         AlertDialog(
             onDismissRequest = { deleteSong = null },
@@ -667,7 +700,7 @@ private fun MusicHome(
 }
 
 @Composable
-private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit) {
+private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit) {
     var speedMenuExpanded by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().weight(1f).padding(top = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(12.dp))
@@ -719,7 +752,13 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
             IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
         }
         Spacer(Modifier.height(8.dp))
-        Box {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            OutlinedButton(onClick = onOpenQueue, shape = RoundedCornerShape(50), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)) {
+                Icon(Icons.Default.QueueMusic, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("UP NEXT", color = foreground, fontWeight = FontWeight.Bold)
+            }
+            Box {
             OutlinedButton(
                 onClick = { speedMenuExpanded = true },
                 shape = RoundedCornerShape(50),
@@ -734,6 +773,8 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
                         onClick = { onSpeedChange(speed); speedMenuExpanded = false }
                     )
                 }
+            }
+        }
             }
         }
         Spacer(Modifier.height(20.dp))
