@@ -80,13 +80,13 @@ Music Pro keeps the on-device library and adds an **Online** destination for bro
 
 ### Enable online music
 
-1. Create an application in the [Jamendo developer portal](https://developer.jamendo.com/) and obtain a client ID.
-2. Build and install Music Pro, then open **Online** in the bottom navigation.
-3. Paste the client ID into **Jamendo client ID** and tap **Save ID**.
-4. Search by track or artist and tap a play icon to stream a result.
-5. Use **View track license** to inspect the license information provided by the catalog before reusing or redistributing a track.
+1. The app publisher creates an application in the [Jamendo developer portal](https://developer.jamendo.com/) and obtains a client ID.
+2. In the GitHub repository, open **Settings → Secrets and variables → Actions → New repository secret**. Set the name to `JAMENDO_CLIENT_ID` and the value to the publisher's client ID.
+3. Run the **Android APK** workflow again, then install the newly built APK.
+4. Open **Online** in the bottom navigation and search by track or artist. Users do **not** enter a client ID or open developer settings.
+5. Tap a play icon to stream a result. Use **View track license** to inspect provider license information before reusing or redistributing a track.
 
-The client ID is stored in the app's local preferences and is not hard-coded into the repository. It is a public API identifier, not a substitute for a server-side secret. Catalog access depends on Jamendo API availability, its current terms, network connectivity, and the developer application's settings. This integration does not imply that every catalog track is licensed for every commercial or redistribution use; check each track's license and attribution requirements.
+The client ID is injected at build time from the repository Actions secret and is not stored in each user's preferences. A client ID is an application identifier, not a password or a substitute for a server-side secret. Do not use a test-only ID for a public release. Catalog access depends on Jamendo API availability, its current terms, network connectivity, and the developer application's settings. This integration does not imply that every catalog track is licensed for every commercial or redistribution use; check each track's license and attribution requirements.
 
 **Offline behavior:** local tracks, local playlists, favorites, and existing player features continue to work without internet. Online catalog tracks require a network connection and are not automatically downloaded for offline use. No streaming catalog can be bundled as universally free music without respecting each provider's rights and terms.
 
