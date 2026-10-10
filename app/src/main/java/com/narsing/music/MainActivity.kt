@@ -1013,7 +1013,7 @@ private fun MusicHome(
                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
                             putExtra(Intent.EXTRA_SUBJECT, "Now playing: ${currentSong.title}")
-                            putExtra(Intent.EXTRA_TEXT, "🎶 NOW PLAYING\\n${currentSong.title} — ${currentSong.artist}\\nShared from Narsing Music\\nhttps://github.com/Narsing-s/Music-pro")
+                            putExtra(Intent.EXTRA_TEXT, "🎶 NOW PLAYING\n${currentSong.title} — ${currentSong.artist}\nShared from Narsing Music\nhttps://github.com/Narsing-s/Music-pro")
                         }
                         runCatching { context.startActivity(Intent.createChooser(shareIntent, "Share listening card")) }
                     }
