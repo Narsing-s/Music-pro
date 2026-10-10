@@ -5,15 +5,23 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.audiofx.Equalizer
+import android.os.Bundle
 import androidx.core.content.ContextCompat
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
-import androidx.media3.session.MediaSessionService
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
 
-class PlaybackService : MediaSessionService() {
-    private var mediaSession: MediaSession? = null
+class PlaybackService : MediaLibraryService() {
+    private var mediaSession: MediaLibrarySession? = null
     private var player: ExoPlayer? = null
     private var equalizer: Equalizer? = null
     private var equalizerSessionId: Int = 0
@@ -39,6 +47,71 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
+    private val libraryCallback = object : MediaLibrarySession.Callback {
+        override fun onGetLibraryRoot(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            params: MediaLibraryService.LibraryParams?
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            val root = MediaItem.Builder()
+                .setMediaId(ROOT_ID)
+                .setMediaMetadata(MediaMetadata.Builder()
+                    .setTitle("Music Pro")
+                    .setIsBrowsable(true)
+                    .setIsPlayable(false)
+                    .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
+                    .build())
+                .build()
+            return Futures.immediateFuture(LibraryResult.ofItem(root, params))
+        }
+
+        override fun onGetChildren(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            parentId: String,
+            page: Int,
+            pageSize: Int,
+            params: MediaLibraryService.LibraryParams?
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
+            val songs = runCatching { MusicRepository(this@PlaybackService).loadSongs() }.getOrDefault(emptyList())
+            val children: List<MediaItem> = when {
+                parentId == ROOT_ID -> listOf(
+                    folder("tracks", "All tracks", MediaMetadata.MEDIA_TYPE_FOLDER_MIXED),
+                    folder("albums", "Albums", MediaMetadata.MEDIA_TYPE_FOLDER_ALBUMS),
+                    folder("artists", "Artists", MediaMetadata.MEDIA_TYPE_FOLDER_ARTISTS),
+                    folder("genres", "Genres", MediaMetadata.MEDIA_TYPE_FOLDER_GENRES)
+                )
+                parentId == "tracks" -> songs.map { it.toLibraryMediaItem() }
+                parentId == "albums" -> songs.groupBy { it.album }.keys.sortedBy { it.lowercase() }
+                    .map { folder("album:$it", it, MediaMetadata.MEDIA_TYPE_FOLDER_ALBUMS) }
+                parentId == "artists" -> songs.flatMap { song -> song.artist.split(Regex("\\s*(?:;|,|\\s&\\s|\\bfeat\\.?\\s+|\\bft\\.?\\s+|\\bfeaturing\\s+)\\s*", RegexOption.IGNORE_CASE)).map { it.trim() to song } }
+                    .filter { it.first.isNotBlank() }.groupBy({ it.first }, { it.second }).keys.sortedBy { it.lowercase() }
+                    .map { folder("artist:$it", it, MediaMetadata.MEDIA_TYPE_FOLDER_ARTISTS) }
+                parentId == "genres" -> songs.flatMap { song -> song.genres.map { it to song } }
+                    .groupBy({ it.first }, { it.second }).keys.sortedBy { it.lowercase() }
+                    .map { folder("genre:$it", it, MediaMetadata.MEDIA_TYPE_FOLDER_GENRES) }
+                parentId.startsWith("album:") -> songs.filter { it.album == parentId.removePrefix("album:") }.map { it.toLibraryMediaItem() }
+                parentId.startsWith("artist:") -> songs.filter { song -> song.artist.split(Regex("\\s*(?:;|,|\\s&\\s|\\bfeat\\.?\\s+|\\bft\\.?\\s+|\\bfeaturing\\s+)\\s*", RegexOption.IGNORE_CASE)).any { it.trim().equals(parentId.removePrefix("artist:"), true) } }.map { it.toLibraryMediaItem() }
+                parentId.startsWith("genre:") -> songs.filter { parentId.removePrefix("genre:") in it.genres }.map { it.toLibraryMediaItem() }
+                else -> emptyList()
+            }
+            val safePageSize = pageSize.coerceAtLeast(1)
+            val from = (page.toLong() * safePageSize).coerceAtMost(children.size.toLong()).toInt()
+            val pageItems = children.drop(from).take(safePageSize)
+            return Futures.immediateFuture(LibraryResult.ofItemList(ImmutableList.copyOf(pageItems), params))
+        }
+
+        override fun onGetItem(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            mediaId: String
+        ): ListenableFuture<LibraryResult<MediaItem>> {
+            val song = runCatching { MusicRepository(this@PlaybackService).loadSongs().firstOrNull { it.uri.toString() == mediaId || it.id.toString() == mediaId } }.getOrNull()
+            return if (song != null) Futures.immediateFuture(LibraryResult.ofItem(song.toLibraryMediaItem(), null))
+            else Futures.immediateFuture(LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE))
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         ContextCompat.registerReceiver(this, equalizerReceiver, IntentFilter(ACTION_EQUALIZER), ContextCompat.RECEIVER_NOT_EXPORTED)
@@ -46,10 +119,10 @@ class PlaybackService : MediaSessionService() {
             setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), true)
             setHandleAudioBecomingNoisy(true)
         }
-        mediaSession = MediaSession.Builder(this, player!!).build()
+        mediaSession = MediaLibrarySession.Builder(this, player!!, libraryCallback).build()
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = mediaSession
 
     override fun onDestroy() {
         runCatching { unregisterReceiver(equalizerReceiver) }
@@ -63,9 +136,21 @@ class PlaybackService : MediaSessionService() {
         super.onDestroy()
     }
 
+    private fun folder(id: String, title: String, mediaType: Int): MediaItem =
+        MediaItem.Builder().setMediaId(id).setMediaMetadata(MediaMetadata.Builder()
+            .setTitle(title).setIsBrowsable(true).setIsPlayable(false).setMediaType(mediaType).build()).build()
+
+    private fun Song.toLibraryMediaItem(): MediaItem = MediaItem.Builder()
+        .setMediaId(uri.toString())
+        .setUri(uri)
+        .setMediaMetadata(MediaMetadata.Builder().setTitle(title).setArtist(artist).setAlbumTitle(album)
+            .setIsBrowsable(false).setIsPlayable(true).setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC).build())
+        .build()
+
     companion object {
         const val ACTION_EQUALIZER = "com.narsing.music.action.EQUALIZER"
         const val EXTRA_BAND = "band"
         const val EXTRA_LEVEL = "level"
+        private const val ROOT_ID = "music-pro-root"
     }
 }
