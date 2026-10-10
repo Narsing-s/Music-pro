@@ -381,12 +381,10 @@ private fun MusicHome(
         if (outputUri != null && playlistName != null) {
             runCatching {
                 val entries = playlists[playlistName].orEmpty().mapNotNull { id -> songs.firstOrNull { it.id == id } }
-                val lines = mutableListOf("#EXTM3U")
-                entries.forEach { song ->
-                    lines += "#EXTINF:${(song.durationMs / 1000L).coerceAtLeast(0L)},${song.title} - ${song.artist}"
-                    lines += song.uri.toString()
-                }
-                context.contentResolver.openOutputStream(outputUri)?.bufferedWriter()?.use { it.write(lines.joinToString("\n")) }
+                val playlistText = buildM3uPlaylist(entries.map { song ->
+                    M3uTrackEntry(song.title, song.artist, song.durationMs, song.uri.toString())
+                })
+                context.contentResolver.openOutputStream(outputUri)?.bufferedWriter()?.use { it.write(playlistText) }
                     ?: error("Could not open the selected file")
                 Toast.makeText(context, "Exported ${entries.size} tracks", Toast.LENGTH_SHORT).show()
             }.onFailure { Toast.makeText(context, "Playlist export failed: ${it.message ?: "unknown error"}", Toast.LENGTH_LONG).show() }
