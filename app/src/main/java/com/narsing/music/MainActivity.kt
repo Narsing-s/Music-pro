@@ -294,6 +294,8 @@ private fun MusicHome(
         val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
         theme = prefs.getString("theme", "DARK") ?: "DARK"
         playbackSpeed = prefs.getFloat("playback_speed", 1f).coerceIn(0.5f, 2f)
+        shuffle = prefs.getBoolean("shuffle_enabled", false)
+        repeat = prefs.getBoolean("repeat_enabled", false)
         favorites = prefs.getStringSet("favorites", emptySet())
             ?.mapNotNull { it.toLongOrNull() }
             ?.toSet()
@@ -307,6 +309,20 @@ private fun MusicHome(
             if (parts.size == 2 && parts[0].isNotBlank()) parts[0] to parts[1].split(",").mapNotNull { it.toLongOrNull() }.distinct() else null
         }?.toMap() ?: emptyMap()
         preferencesLoaded = true
+    }
+    LaunchedEffect(shuffle, preferencesLoaded) {
+        if (preferencesLoaded) {
+            onShuffle(shuffle)
+            context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+                .edit().putBoolean("shuffle_enabled", shuffle).apply()
+        }
+    }
+    LaunchedEffect(repeat, preferencesLoaded) {
+        if (preferencesLoaded) {
+            onRepeat(repeat)
+            context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+                .edit().putBoolean("repeat_enabled", repeat).apply()
+        }
     }
     LaunchedEffect(favorites, preferencesLoaded) {
         if (preferencesLoaded) context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
@@ -746,6 +762,16 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(formatDuration(positionMs), color = subtleColor, fontSize = 11.sp)
             Text(formatDuration(durationMs), color = subtleColor, fontSize = 11.sp)
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            OutlinedButton(onClick = { onSeek((positionMs - 10_000L).coerceAtLeast(0L)) }, enabled = durationMs > 0L, shape = RoundedCornerShape(50), contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)) {
+                Text("↶ 10s", color = foreground, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.width(12.dp))
+            OutlinedButton(onClick = { onSeek((positionMs + 10_000L).coerceAtMost(durationMs)) }, enabled = durationMs > 0L, shape = RoundedCornerShape(50), contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)) {
+                Text("10s ↷", color = foreground, fontWeight = FontWeight.Bold)
+            }
         }
         Spacer(Modifier.weight(1f))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
