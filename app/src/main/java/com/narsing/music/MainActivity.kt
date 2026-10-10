@@ -1097,7 +1097,7 @@ private fun MusicHome(
                                     Text("${playlists[name].orEmpty().size} tracks", color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                                 IconButton(onClick = { artworkTargetKey = "playlist_$name"; artworkTargetLabel = name; artworkPickerLauncher.launch(arrayOf("image/*")) }) { Icon(Icons.Default.Image, contentDescription = "Change playlist artwork", tint = subtle) }
-                                TextButton(onClick = { pendingExportPlaylistName = name; exportPlaylistLauncher.launch("${name.replace(Regex("[^A-Za-z0-9 _-]"), "").ifBlank { "Music playlist" }}.m3u") }) { Text("Export", color = Accent) }
+                                TextButton(onClick = { pendingExportPlaylistName = name; exportPlaylistLauncher.launch("${safePlaylistFileName(name)}.m3u") }) { Text("Export", color = Accent) }
                                 TextButton(onClick = { playlists = playlists - name; if (activePlaylist == name) activePlaylist = null }) { Text("Delete", color = Accent) }
                             }
                             HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
