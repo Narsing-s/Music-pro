@@ -35,13 +35,18 @@ These are **candidate gaps**, not instructions to change the current UI. Do them
 4. **Optional player gestures and artwork styles.** Swipe next/previous, tap artwork to toggle playback, and vinyl/waveform presentation are interaction/design choices. They must be opt-in and must not replace existing buttons or seek behavior.
 5. **Media format and metadata edge cases.** Broaden format/metadata coverage only after checking Android's MediaStore and Media3 support for the actual formats. Never advertise theoretical support as verified support.
 
+## Implementation update (2026-10-10)
+
+- **Completed:** added a second compact, high-contrast home-screen widget as a separate launcher option. It has its own provider, layout, and widget sizing metadata; the original widget remains registered and unchanged.
+- **Completed:** both widget variants share the same Media3 playback session behavior and refresh on track changes, play/pause, shuffle, and repeat state changes.
+- **Not yet device-verified:** launcher rendering, narrow-width clipping, and button interaction on different Android launchers.
+
 ## Safe implementation order
 
-1. **Now:** keep the completed widget shuffle/repeat controls, M3U hardening, and lyric parsing; run CI and record real-device checks separately.
-2. **Next, isolated:** add a second widget layout/provider using the same Media3 session, leaving the existing widget untouched.
-3. **After that:** add automated play-history/recap logic before any new UI; make collection and clearing behavior explicit.
-4. **Later:** design album-level metadata overrides with tests and migration coverage before exposing editor actions.
-5. **Only by opt-in:** gesture and artwork presentation preferences.
+1. **Now:** run CI and record real-device checks separately; keep M3U hardening and lyric parsing covered by their regression tests.
+2. **Next, isolated:** add automated play-history/recap logic before any new UI; make collection and clearing behavior explicit.
+3. **Later:** design album-level metadata overrides with tests and migration coverage before exposing editor actions.
+4. **Only by opt-in:** gesture and artwork presentation preferences.
 
 ## Verification checklist
 
