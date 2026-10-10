@@ -26,6 +26,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -73,6 +74,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
@@ -90,6 +92,8 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.delay
+import kotlin.math.PI
+import kotlin.math.atan2
 
 private val Ink = Color(0xFF090909)
 private val Panel = Color(0xFF171717)
@@ -1508,7 +1512,7 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, album: String,
     val recordRotation = recordMotion.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
-        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 12000, easing = LinearEasing), repeatMode = RepeatMode.Restart),
+        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 24000, easing = LinearEasing), repeatMode = RepeatMode.Restart),
         label = "record-rotation"
     )
     Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(top = 4.dp, bottom = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1523,7 +1527,25 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, album: String,
         }
         Spacer(Modifier.height(8.dp))
         Box(
-            Modifier.fillMaxWidth().heightIn(max = 320.dp).aspectRatio(1f).padding(4.dp),
+            Modifier.fillMaxWidth().heightIn(max = 320.dp).aspectRatio(1f).padding(4.dp).pointerInput(durationMs) {
+                if (durationMs > 0L) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            val dx = offset.x - size.width / 2f
+                            val dy = offset.y - size.height / 2f
+                            val angle = (atan2(dy, dx) + PI / 2.0 + 2.0 * PI) % (2.0 * PI)
+                            onSeek((angle / (2.0 * PI) * durationMs).toLong().coerceIn(0L, durationMs))
+                        },
+                        onDrag = { change, _ ->
+                            change.consume()
+                            val dx = change.position.x - size.width / 2f
+                            val dy = change.position.y - size.height / 2f
+                            val angle = (atan2(dy, dx) + PI / 2.0 + 2.0 * PI) % (2.0 * PI)
+                            onSeek((angle / (2.0 * PI) * durationMs).toLong().coerceIn(0L, durationMs))
+                        }
+                    )
+                }
+            },
             contentAlignment = Alignment.Center
         ) {
             Surface(
