@@ -549,10 +549,10 @@ private fun MusicHome(
     Surface(Modifier.fillMaxSize(), color = bg) {
         Column(Modifier.fillMaxSize().padding(horizontal = 22.dp)) {
             if (tab != "NOW PLAYING") {
-            Row(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(top = if (tab == "HOME") 24.dp else 8.dp, bottom = if (tab == "HOME") 18.dp else 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("MUSIC PRO", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                    Text("MUSIC PRO", color = fg, fontSize = 38.sp, fontWeight = FontWeight.Black, letterSpacing = (-1).sp)
+                    Text("MUSIC PRO", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                    Text(if (tab == "HOME") "MUSIC PRO" else when (tab) { "TRACKS" -> "All songs"; "ALBUMS" -> "Albums"; "ARTISTS" -> "Artists"; "PLAYLISTS" -> "Playlists"; "FAVORITES" -> "Favorites"; "RECENT" -> "Recently played"; else -> tab.lowercase().replaceFirstChar { it.uppercase() } }, color = fg, fontSize = if (tab == "HOME") 34.sp else 25.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.6).sp)
                 }
                 Box {
                     IconButton(onClick = { sleepMenuExpanded = true }) {
@@ -576,6 +576,7 @@ private fun MusicHome(
                 IconButton(onClick = { showEqualizerDialog = true }) { Icon(Icons.Default.Tune, contentDescription = "Equalizer", tint = if (equalizerLevels.any { it != 0f }) Accent else fg) }
                 IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, contentDescription = "Rescan music", tint = fg) }
             }
+            if (tab == "HOME") {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("${songs.size} TRACKS", color = subtle, fontSize = 11.sp, letterSpacing = 1.5.sp)
                 Spacer(Modifier.weight(1f))
@@ -651,11 +652,12 @@ private fun MusicHome(
                 }
             }
             Spacer(Modifier.height(14.dp))
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("HOME", "TRACKS", "ARTISTS", "ALBUMS", "GENRES", "FOLDERS", "RECENT", "PLAYLISTS", "FAVORITES", "NOW PLAYING").forEach { label ->
+            }
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                listOf("HOME", "TRACKS", "ALBUMS", "PLAYLISTS", "ARTISTS", "GENRES", "FOLDERS", "RECENT", "FAVORITES", "NOW PLAYING").forEach { label ->
                     val active = tab == label
                     Surface(color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(50), modifier = Modifier.clickable { tab = label; showFavorites = label == "FAVORITES" }) {
-                        Text(label, color = if (active) Color.White else subtle, modifier = Modifier.padding(horizontal = 18.dp, vertical = 13.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text(label, color = if (active) Color.White else subtle, modifier = Modifier.padding(horizontal = if (tab == "HOME") 14.dp else 12.dp, vertical = if (tab == "HOME") 10.dp else 8.dp), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.4.sp)
                     }
                 }
             }
@@ -1164,7 +1166,7 @@ private fun MusicHome(
                 Column(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                     // Keep the collection heading on its own row so action buttons never squeeze it into vertical text.
                     Text(
-                        if (showFavorites || tab == "FAVORITES") "YOUR FAVORITES" else "YOUR COLLECTION",
+                        when { showFavorites || tab == "FAVORITES" -> "YOUR FAVORITES"; tab == "TRACKS" -> "LOCAL SONGS"; tab == "ALBUMS" -> "ALBUM TRACKS"; tab == "PLAYLISTS" -> "PLAYLIST TRACKS"; else -> "YOUR COLLECTION" },
                         modifier = Modifier.fillMaxWidth(),
                         color = fg,
                         fontWeight = FontWeight.Black,
@@ -1174,7 +1176,7 @@ private fun MusicHome(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "${sortedFiltered.size} tracks • ${songs.map { it.artist }.distinct().size} artists",
+                        "${sortedFiltered.size} songs on this device • ${songs.map { it.artist.trim().ifBlank { "Unknown artist" } }.distinct().size} artists",
                         color = subtle,
                         fontSize = 12.sp,
                         maxLines = 1,
@@ -1226,8 +1228,8 @@ private fun MusicHome(
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
                     itemsIndexed(sortedFiltered, key = { _, song -> song.id }) { _, song ->
                         val originalIndex = songs.indexOfFirst { it.id == song.id }
-                        Row(Modifier.fillMaxWidth().clickable { if (selectedTrackIds.isNotEmpty()) selectedTrackIds = if (song.id in selectedTrackIds) selectedTrackIds - song.id else selectedTrackIds + song.id else { tab = "NOW PLAYING"; onPlay(originalIndex) } }.padding(vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Surface(Modifier.size(60.dp), color = if (song.id in selectedTrackIds) Accent.copy(alpha = 0.22f) else Panel, shape = RoundedCornerShape(10.dp)) {
+                        Row(Modifier.fillMaxWidth().clickable { if (selectedTrackIds.isNotEmpty()) selectedTrackIds = if (song.id in selectedTrackIds) selectedTrackIds - song.id else selectedTrackIds + song.id else { tab = "NOW PLAYING"; onPlay(originalIndex) } } .padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(Modifier.size(48.dp), color = if (song.id in selectedTrackIds) Accent.copy(alpha = 0.22f) else Panel, shape = RoundedCornerShape(10.dp)) {
                                 Box(contentAlignment = Alignment.Center) { if (song.id in selectedTrackIds) Text("✓", color = Accent, fontWeight = FontWeight.Black) else Icon(Icons.Default.MusicNote, contentDescription = null, tint = if (originalIndex == selectedIndex) Accent else Muted) }
                             }
                             Spacer(Modifier.width(12.dp))
