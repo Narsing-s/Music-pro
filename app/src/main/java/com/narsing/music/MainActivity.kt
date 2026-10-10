@@ -686,34 +686,47 @@ private fun MusicHome(
                     }
                     val quickListenIndices = songs.indices.filter { songs[it].durationMs in 1L..179_999L }
                     val longSessionIndices = songs.indices.filter { songs[it].durationMs > 360_000L }
-                    Spacer(Modifier.height(4.dp))
-                    Text("QUICK MIXES", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontSize = 12.sp)
-                    Spacer(Modifier.height(8.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        listOf(
-                            Triple("QUICK LISTEN", "Under 3 min", quickListenIndices),
-                            Triple("LONG SESSION", "Over 6 min", longSessionIndices)
-                        ).forEach { mix ->
-                            Surface(
-                                onClick = {
-                                    if (mix.third.isNotEmpty()) {
-                                        query = ""
-                                        showFavorites = false
-                                        activePlaylist = null
-                                        tab = "TRACKS"
-                                        onPlayCollection(mix.third.shuffled(), true)
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = if (theme == "LIGHT") Color(0xFFF0ECE2) else Color(0xFF111111),
+                        shape = RoundedCornerShape(18.dp)
+                    ) {
+                        Column(Modifier.fillMaxWidth().padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text("QUICK MIXES", color = fg, fontWeight = FontWeight.Black, letterSpacing = 1.sp, fontSize = 13.sp)
+                                    Text("Pick a mood by track length", color = subtle, fontSize = 11.sp)
+                                }
+                                Icon(Icons.Default.GraphicEq, contentDescription = null, tint = Accent)
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                listOf(
+                                    Triple("QUICK LISTEN", "Under 3 min", quickListenIndices),
+                                    Triple("LONG SESSION", "Over 6 min", longSessionIndices)
+                                ).forEach { mix ->
+                                    Surface(
+                                        onClick = {
+                                            if (mix.third.isNotEmpty()) {
+                                                query = ""
+                                                showFavorites = false
+                                                activePlaylist = null
+                                                tab = "TRACKS"
+                                                onPlayCollection(mix.third.shuffled(), true)
+                                            }
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
+                                        shape = RoundedCornerShape(14.dp)
+                                    ) {
+                                        Column(Modifier.padding(12.dp)) {
+                                            Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Accent)
+                                            Spacer(Modifier.height(6.dp))
+                                            Text(mix.first, color = fg, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp)
+                                            Text(mix.second, color = subtle, fontSize = 10.sp)
+                                            Text("${mix.third.size} tracks", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp))
+                                        }
                                     }
-                                },
-                                modifier = Modifier.weight(1f),
-                                color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
-                                shape = RoundedCornerShape(14.dp)
-                            ) {
-                                Column(Modifier.padding(12.dp)) {
-                                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Accent)
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(mix.first, color = fg, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp)
-                                    Text(mix.second, color = subtle, fontSize = 10.sp)
-                                    Text("${mix.third.size} tracks", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp))
                                 }
                             }
                         }
