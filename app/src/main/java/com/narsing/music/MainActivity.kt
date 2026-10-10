@@ -57,7 +57,9 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.*
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -130,7 +132,7 @@ class MainActivity : ComponentActivity() {
                 hasPermission = granted
                 if (granted) refreshLibrary()
             }
-            MaterialTheme(typography = Typography(defaultFontFamily = appFontFamily), colorScheme = darkColorScheme(primary = Accent, background = Ink, surface = Panel, onBackground = Paper, onSurface = Paper)) {
+            MaterialTheme(colorScheme = darkColorScheme(primary = Accent, background = Ink, surface = Panel, onBackground = Paper, onSurface = Paper)) {
                 LaunchedEffect(Unit) {
                     if (!hasPermission) permissionLauncher.launch(permission) else refreshLibrary()
                     connectController()
@@ -138,6 +140,7 @@ class MainActivity : ComponentActivity() {
                 val deleteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
                     if (result.resultCode == Activity.RESULT_OK) refreshLibrary()
                 }
+                CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(fontFamily = appFontFamily)) {
                 MusicHome(
                     songs, selectedIndex, isPlaying, currentTitle, currentArtist, hasPermission,
                     onFontChoiceChange = { choice -> fontChoice = choice; getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit().putString("font_choice", choice).apply() },
@@ -165,6 +168,7 @@ class MainActivity : ComponentActivity() {
                     onRemoveQueueItem = { index -> mediaController?.let { controller -> if (index in 0 until controller.mediaItemCount) controller.removeMediaItem(index) } },
                     onMoveQueueItem = { from, to -> mediaController?.let { controller -> if (from in 0 until controller.mediaItemCount && to in 0 until controller.mediaItemCount) controller.moveMediaItem(from, to) } }
                 )
+                }
             }
         }
     }
