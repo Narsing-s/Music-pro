@@ -101,6 +101,7 @@ class MainActivity : ComponentActivity() {
                     onGrant = { permissionLauncher.launch(permission) },
                     onRefresh = { refreshLibrary() },
                     onPlay = { playAt(it) },
+                    onPlayCollection = { indices, shuffled -> playCollection(indices, shuffled) },
                     onPlayNext = { index -> playNext(index) },
                     onShare = { song -> shareSong(song) },
                     onToggle = { togglePlayback() },
@@ -151,6 +152,23 @@ class MainActivity : ComponentActivity() {
         mediaController?.apply { setMediaItems(items, index, 0L); prepare(); play() }
         currentTitle = songs[index].title
         currentArtist = songs[index].artist
+        isPlaying = true
+    }
+
+    private fun playCollection(indices: List<Int>, shuffled: Boolean) {
+        val validIndices = indices.filter { it in songs.indices }.distinct()
+        if (validIndices.isEmpty()) return
+        val order = if (shuffled) validIndices.shuffled() else validIndices
+        val items = order.map { index ->
+            val song = songs[index]
+            MediaItem.Builder().setUri(song.uri).setMediaMetadata(
+                MediaMetadata.Builder().setTitle(song.title).setArtist(song.artist).setAlbumTitle(song.album).build()
+            ).build()
+        }
+        mediaController?.apply { setMediaItems(items, 0, 0L); prepare(); play() }
+        selectedIndex = order.first()
+        currentTitle = songs[selectedIndex].title
+        currentArtist = songs[selectedIndex].artist
         isPlaying = true
     }
 
@@ -220,7 +238,7 @@ class MainActivity : ComponentActivity() {
 private fun MusicHome(
     songs: List<Song>, selectedIndex: Int, playing: Boolean, title: String, artist: String,
     hasPermission: Boolean, onGrant: () -> Unit, onRefresh: () -> Unit,
-    onPlay: (Int) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
+    onPlay: (Int) -> Unit, onPlayCollection: (List<Int>, Boolean) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
     onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit,
     onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit,
     onDelete: (Song) -> Unit
@@ -524,6 +542,18 @@ private fun MusicHome(
                     Column(Modifier.weight(1f)) {
                         Text(if (showFavorites || tab == "FAVORITES") "YOUR FAVORITES" else "YOUR COLLECTION", color = fg, fontWeight = FontWeight.Black, fontSize = 18.sp)
                         Text("${sortedFiltered.size} tracks • ${songs.map { it.artist }.distinct().size} artists", color = subtle, fontSize = 12.sp)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Button(
+                            onClick = { onPlayCollection(sortedFiltered.map { song -> songs.indexOfFirst { it.id == song.id } }.filter { it >= 0 }, false) },
+                            enabled = sortedFiltered.isNotEmpty(),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Accent)
+                        ) { Icon(Icons.Default.PlayArrow, contentDescription = "Play all filtered tracks", modifier = Modifier.size(18.dp)); Spacer(Modifier.width(3.dp)); Text("PLAY", fontSize = 10.sp) }
+                        IconButton(onClick = { onPlayCollection(sortedFiltered.map { song -> songs.indexOfFirst { it.id == song.id } }.filter { it >= 0 }, true) }, enabled = sortedFiltered.isNotEmpty()) {
+                            Icon(Icons.Default.Shuffle, contentDescription = "Shuffle filtered tracks", tint = Accent)
+                        }
                     }
                     Box {
                         OutlinedButton(onClick = { sortMenuExpanded = true }, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
