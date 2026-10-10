@@ -29,8 +29,8 @@ Reviewed against the public [MissingCore/Music feature list](https://github.com/
 
 These are **candidate gaps**, not instructions to change the current UI. Do them only as opt-in additions with tests and no regression to existing behavior.
 
-1. **Multiple widget layouts and appearance options.** Music Pro currently has one resizable widget. A compact 2×1 and an artwork-focused layout could be added as separate launcher choices without changing in-app screens. Keep the current widget available.
-2. **Listening recaps and play-count insights.** Add only as a new, clearly labeled optional destination, with local-only storage and a clear-history action. Do not silently start tracking extra history.
+1. **Multiple widget layouts and appearance options.** Music Pro now has the original resizable widget plus a separate compact layout. An artwork-focused layout remains a candidate if it can be added independently.
+2. **Listening recaps and play-count insights.** Implemented as a separate Insights destination with local-only play counts/listening time and a clear-history action. Play counts are recorded after 30 seconds of active playback; no network or analytics service is used.
 3. **Album-level metadata editing.** Music Pro currently overrides metadata per track. Album name/artist/year/genre overrides and EP/single grouping would need a data model and migration plan; do not implement by mutating original files.
 4. **Optional player gestures and artwork styles.** Swipe next/previous, tap artwork to toggle playback, and vinyl/waveform presentation are interaction/design choices. They must be opt-in and must not replace existing buttons or seek behavior.
 5. **Media format and metadata edge cases.** Broaden format/metadata coverage only after checking Android's MediaStore and Media3 support for the actual formats. Never advertise theoretical support as verified support.
@@ -39,14 +39,14 @@ These are **candidate gaps**, not instructions to change the current UI. Do them
 
 - **Completed:** added a second compact, high-contrast home-screen widget as a separate launcher option. It has its own provider, layout, and widget sizing metadata; the original widget remains registered and unchanged.
 - **Completed:** both widget variants share the same Media3 playback session behavior and refresh on track changes, play/pause, shuffle, and repeat state changes.
-- **Not yet device-verified:** launcher rendering, narrow-width clipping, and button interaction on different Android launchers.
+- **Completed:** added a separate Insights destination that tracks active listening time locally and counts a play after 30 seconds. Users can clear only insight data without clearing favorites or recent-track history.
+- **Not yet device-verified:** launcher rendering, narrow-width clipping, widget button interaction, and the Insights screen on physical devices.
 
 ## Safe implementation order
 
 1. **Now:** run CI and record real-device checks separately; keep M3U hardening and lyric parsing covered by their regression tests.
-2. **Next, isolated:** add automated play-history/recap logic before any new UI; make collection and clearing behavior explicit.
-3. **Later:** design album-level metadata overrides with tests and migration coverage before exposing editor actions.
-4. **Only by opt-in:** gesture and artwork presentation preferences.
+2. **Next, isolated:** consider optional album-level metadata overrides with migration and collision tests before exposing editor actions.
+3. **Only by opt-in:** gesture and artwork presentation preferences.
 
 ## Verification checklist
 
