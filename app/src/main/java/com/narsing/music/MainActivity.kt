@@ -352,6 +352,13 @@ private fun MusicHome(
     var artworkTargetLabel by remember { mutableStateOf("") }
     var artworkUris by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var insightRefreshVersion by remember { mutableIntStateOf(0) }
+    var albumMetadataRefreshVersion by remember { mutableIntStateOf(0) }
+    var editingAlbumName by remember { mutableStateOf<String?>(null) }
+    var albumNameDraft by remember { mutableStateOf("") }
+    var albumArtistsDraft by remember { mutableStateOf("") }
+    var albumYearDraft by remember { mutableStateOf("") }
+    var albumGenresDraft by remember { mutableStateOf("") }
+    var albumIsEpDraft by remember { mutableStateOf(false) }
     var activeSessionListenMs by remember(selectedIndex) { mutableLongStateOf(0L) }
     var activeSessionCounted by remember(selectedIndex) { mutableStateOf(false) }
     val insightRows = remember(songs, insightRefreshVersion) { ListeningInsightsStore.snapshot(context, songs) }
@@ -1100,28 +1107,90 @@ private fun MusicHome(
                     }
                 }
             } else if (tab == "ALBUMS") {
-                val albums = songs.groupBy { it.album.ifBlank { "Unknown album" } }.toList().sortedBy { it.first.lowercase() }
+                val albums = remember(songs, albumMetadataRefreshVersion) { songs.groupBy { it.album.ifBlank { "Unknown album" } }.toList().sortedBy { AlbumMetadataStore.get(context, it.first).name.ifBlank { it.first }.lowercase() } }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
                     item { Text("BROWSE ALBUMS", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 10.dp)) }
                     itemsIndexed(albums, key = { _, albumEntry -> albumEntry.first }) { _, albumEntry ->
                         val albumName = albumEntry.first
                         val albumSongs = albumEntry.second
+                        val albumOverride = AlbumMetadataStore.get(context, albumName)
+                        val displayAlbumName = albumOverride.name.ifBlank { albumName }
+                        val displayAlbumArtists = albumOverride.artists.ifBlank { albumSongs.map { it.artist }.filter { it.isNotBlank() }.distinct().joinToString(", ").ifBlank { "Unknown artist" } }
                         Row(Modifier.fillMaxWidth().clickable { albumSongs.firstOrNull()?.let { tab = "NOW PLAYING"; onPlay(songs.indexOf(it)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Surface(Modifier.size(60.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
-                                val art = artworkUris["album_$albumName"]
-                                if (art != null) AsyncImage(model = art, contentDescription = "$albumName artwork", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)))
+                                val art = artworkUris["album_$albumName"] ?: artworkUris["album_$displayAlbumName"]
+                                if (art != null) AsyncImage(model = art, contentDescription = "$displayAlbumName artwork", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)))
                                 else Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Album, contentDescription = null, tint = Accent, modifier = Modifier.size(26.dp)) }
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(albumName, color = fg, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text("${albumSongs.size} tracks • ${albumSongs.firstOrNull()?.artist ?: "Unknown artist"}", color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(displayAlbumName, color = fg, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                val detailLine = buildList {
+                                    add("${albumSongs.size} tracks")
+                                    add(displayAlbumArtists)
+                                    albumOverride.year.takeIf { it.isNotBlank() }?.let(::add)
+                                    albumOverride.genres.takeIf { it.isNotBlank() }?.let(::add)
+                                    if (albumOverride.isEp) add("EP")
+                                }.joinToString(" • ")
+                                Text(detailLine, color = subtle, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             }
+                            IconButton(onClick = {
+                                editingAlbumName = albumName
+                                albumNameDraft = albumOverride.name.ifBlank { albumName }
+                                albumArtistsDraft = albumOverride.artists.ifBlank { albumSongs.map { it.artist }.filter { it.isNotBlank() }.distinct().joinToString(", ") }
+                                albumYearDraft = albumOverride.year
+                                albumGenresDraft = albumOverride.genres.ifBlank { albumSongs.flatMap { it.genres }.distinct().joinToString(", ") }
+                                albumIsEpDraft = albumOverride.isEp
+                            }) { Icon(Icons.Default.Tune, contentDescription = "Edit album metadata", tint = Accent) }
                             Icon(Icons.Default.PlayArrow, contentDescription = "Play album", tint = Accent)
-                            IconButton(onClick = { artworkTargetKey = "album_$albumName"; artworkTargetLabel = albumName; artworkPickerLauncher.launch(arrayOf("image/*")) }) { Icon(Icons.Default.Image, contentDescription = "Change album artwork", tint = subtle) }
+                            IconButton(onClick = { artworkTargetKey = "album_$albumName"; artworkTargetLabel = displayAlbumName; artworkPickerLauncher.launch(arrayOf("image/*")) }) { Icon(Icons.Default.Image, contentDescription = "Change album artwork", tint = subtle) }
                         }
                         HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
                     }
+                }
+                editingAlbumName?.let { originalName ->
+                    AlertDialog(
+                        onDismissRequest = { editingAlbumName = null },
+                        title = { Text("EDIT ALBUM", fontWeight = FontWeight.Black) },
+                        text = {
+                            Column(Modifier.fillMaxWidth().heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Text("These changes are saved inside Music Pro and do not modify audio files.", color = subtle, fontSize = 12.sp)
+                                OutlinedTextField(value = albumNameDraft, onValueChange = { albumNameDraft = it }, label = { Text("Album name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(value = albumArtistsDraft, onValueChange = { albumArtistsDraft = it }, label = { Text("Album artists") }, singleLine = false, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(value = albumYearDraft, onValueChange = { albumYearDraft = it.filter(Char::isDigit).take(4) }, label = { Text("Year (optional)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                                OutlinedTextField(value = albumGenresDraft, onValueChange = { albumGenresDraft = it }, label = { Text("Genres (comma-separated)") }, singleLine = false, modifier = Modifier.fillMaxWidth())
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(checked = albumIsEpDraft, onCheckedChange = { albumIsEpDraft = it })
+                                    Text("Mark as EP")
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                AlbumMetadataStore.save(context, originalName, AlbumMetadataOverride(
+                                    name = albumNameDraft.trim().take(200),
+                                    artists = albumArtistsDraft.trim().take(300),
+                                    year = albumYearDraft.trim().takeIf { it.length == 4 && it.toIntOrNull() in 1000..9999 }.orEmpty(),
+                                    genres = albumGenresDraft.split(",").map { it.trim() }.filter { it.isNotBlank() }.distinct().joinToString(", ").take(300),
+                                    isEp = albumIsEpDraft
+                                ))
+                                albumMetadataRefreshVersion++
+                                editingAlbumName = null
+                                Toast.makeText(context, "Album details saved", Toast.LENGTH_SHORT).show()
+                            }) { Text("SAVE", color = Accent, fontWeight = FontWeight.Bold) }
+                        },
+                        dismissButton = {
+                            Row {
+                                TextButton(onClick = {
+                                    AlbumMetadataStore.clear(context, originalName)
+                                    albumMetadataRefreshVersion++
+                                    editingAlbumName = null
+                                    Toast.makeText(context, "Album overrides cleared", Toast.LENGTH_SHORT).show()
+                                }) { Text("RESET", color = subtle) }
+                                TextButton(onClick = { editingAlbumName = null }) { Text("CANCEL", color = subtle) }
+                            }
+                        }
+                    )
                 }
             } else if (tab == "GENRES") {
                 val genres = songs.flatMap { song -> song.genres.ifEmpty { listOf(song.genre.ifBlank { "Unknown genre" }) }.map { genreName -> genreName to song } }.groupBy({ it.first }, { it.second }).toList().sortedBy { it.first.lowercase() }
