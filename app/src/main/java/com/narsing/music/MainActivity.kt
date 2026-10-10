@@ -402,7 +402,8 @@ private fun MusicHome(
     // Keep personal UI preferences on-device. No library files or playback data are moved.
     LaunchedEffect(Unit) {
         val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
-        theme = prefs.getString("theme", "DARK") ?: "DARK"\n        artworkUris = songs.mapNotNull { song -> prefs.getString("artwork_${song.id}", null)?.let { song.id to it } }.toMap()
+        theme = prefs.getString("theme", "DARK") ?: "DARK"
+        artworkUris = songs.mapNotNull { song -> prefs.getString("artwork_${song.id}", null)?.let { song.id to it } }.toMap()
         playbackSpeed = prefs.getFloat("playback_speed", 1f).coerceIn(0.5f, 2f)
         equalizerLevels = (prefs.getString("equalizer_levels", "0,0,0,0,0") ?: "0,0,0,0,0").split(",").mapNotNull { it.toFloatOrNull() }.take(5).let { values -> (values + List((5 - values.size).coerceAtLeast(0)) { 0f }).take(5) }
         shuffle = prefs.getBoolean("shuffle_enabled", false)
@@ -1165,7 +1166,9 @@ private fun MusicHome(
                                 DropdownMenu(expanded = addToPlaylistSong?.id == song.id, onDismissRequest = { addToPlaylistSong = null }) {
                                     DropdownMenuItem(text = { Text("Play next") }, onClick = { onPlayNext(originalIndex); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Track details") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { detailsSong = song; addToPlaylistSong = null })
-                                    DropdownMenuItem(text = { Text("Edit metadata") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { metadataDraftTitle = song.title; metadataDraftArtist = song.artist; metadataDraftAlbum = song.album; editMetadataSong = song; addToPlaylistSong = null })\n                                    DropdownMenuItem(text = { Text(if (artworkUris.containsKey(song.id)) "Change artwork" else "Set custom artwork") }, leadingIcon = { Icon(Icons.Default.Album, contentDescription = null) }, onClick = { artworkTargetSong = song; addToPlaylistSong = null; artworkPickerLauncher.launch(arrayOf("image/*")) })\n                                    if (artworkUris.containsKey(song.id)) DropdownMenuItem(text = { Text("Remove custom artwork") }, onClick = { artworkUris = artworkUris - song.id; context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit().remove("artwork_${song.id}").apply(); addToPlaylistSong = null })
+                                    DropdownMenuItem(text = { Text("Edit metadata") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { metadataDraftTitle = song.title; metadataDraftArtist = song.artist; metadataDraftAlbum = song.album; editMetadataSong = song; addToPlaylistSong = null })
+                                    DropdownMenuItem(text = { Text(if (artworkUris.containsKey(song.id)) "Change artwork" else "Set custom artwork") }, leadingIcon = { Icon(Icons.Default.Album, contentDescription = null) }, onClick = { artworkTargetSong = song; addToPlaylistSong = null; artworkPickerLauncher.launch(arrayOf("image/*")) })
+                                    if (artworkUris.containsKey(song.id)) DropdownMenuItem(text = { Text("Remove custom artwork") }, onClick = { artworkUris = artworkUris - song.id; context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit().remove("artwork_${song.id}").apply(); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Share audio") }, leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) }, onClick = { onShare(song); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Delete from device", color = Color(0xFFE84B35)) }, onClick = { deleteSong = song; addToPlaylistSong = null })
                                     if (playlists.isEmpty()) DropdownMenuItem(text = { Text("Create playlist first") }, onClick = { addToPlaylistSong = null; tab = "PLAYLISTS"; showCreatePlaylist = true })
