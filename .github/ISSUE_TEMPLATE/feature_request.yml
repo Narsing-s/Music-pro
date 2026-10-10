@@ -1,0 +1,35 @@
+name: Feature request
+description: Suggest an improvement for Narsing Music
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem should this solve?
+      description: Explain the user need, not only the proposed solution.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to happen?
+      description: Describe the behavior or experience you have in mind.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered (optional)
+    validations:
+      required: false
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy and compatibility
+      options:
+        - label: I considered offline-first behavior and would not require uploading personal music or listening history by default.
+          required: false
+        - label: I considered accessibility and smaller-screen layouts.
+          required: false
