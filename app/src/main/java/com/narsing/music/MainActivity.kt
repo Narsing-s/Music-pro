@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Shuffle
@@ -542,6 +543,7 @@ private fun MusicHome(
     }
     Surface(Modifier.fillMaxSize(), color = bg) {
         Column(Modifier.fillMaxSize().padding(horizontal = 22.dp)) {
+            if (tab != "NOW PLAYING") {
             Row(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("MUSIC PRO", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
@@ -653,6 +655,7 @@ private fun MusicHome(
                 }
             }
             Spacer(Modifier.height(12.dp))
+            }
             if (tab == "HOME" && hasPermission) {
                 Column(Modifier.fillMaxWidth().weight(1f)) {
                     Text("YOUR SOUNDTRACK", color = fg, fontSize = 22.sp, fontWeight = FontWeight.Black)
@@ -984,7 +987,7 @@ private fun MusicHome(
             } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, artworkUris["track_${songs.getOrNull(selectedIndex)?.id}"], { songs.getOrNull(selectedIndex)?.let { artworkTargetKey = "track_${it.id}"; artworkTargetLabel = it.title; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true, lyricsText = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${it.id}", "") }.orEmpty())
+                NowPlaying(title, artist, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, artworkUris["track_${songs.getOrNull(selectedIndex)?.id}"], { tab = "HOME" }, { songs.getOrNull(selectedIndex)?.let { artworkTargetKey = "track_${it.id}"; artworkTargetLabel = it.title; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true, lyricsText = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${it.id}", "") }.orEmpty())
             } else if (tab == "ARTISTS") {
                 val artists = songs.flatMap { splitArtists(it.artist.ifBlank { "Unknown artist" }) }.distinctBy { it.lowercase() }.sortedBy { it.lowercase() }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
@@ -1248,7 +1251,7 @@ private fun MusicHome(
                     }
                 }
             }
-            if (selectedIndex >= 0 && songs.getOrNull(selectedIndex) != null) {
+            if (tab != "NOW PLAYING" && selectedIndex >= 0 && songs.getOrNull(selectedIndex) != null) {
                 Surface(color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp), modifier = Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING" }) {
                     Row(Modifier.padding(horizontal = 16.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Surface(Modifier.size(52.dp), color = Color(0xFF252525), shape = RoundedCornerShape(8.dp)) {
@@ -1498,7 +1501,7 @@ private fun MusicHome(
 }
 
 @Composable
-private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, artworkUri: String?, onChooseArtwork: () -> Unit, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit, onOpenLyrics: () -> Unit, hasLyrics: Boolean, lyricsText: String) {
+private fun ColumnScope.NowPlaying(title: String, album: String, foreground: Color, subtleColor: Color, accentColor: Color, artworkUri: String?, onBack: () -> Unit, onChooseArtwork: () -> Unit, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit, onOpenLyrics: () -> Unit, hasLyrics: Boolean, lyricsText: String) {
     var speedMenuExpanded by remember { mutableStateOf(false) }
     val recordMotion = rememberInfiniteTransition(label = "vinyl-record")
     val recordRotation = recordMotion.animateFloat(
@@ -1507,8 +1510,17 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
         animationSpec = infiniteRepeatable(animation = tween(durationMillis = 12000, easing = LinearEasing), repeatMode = RepeatMode.Restart),
         label = "record-rotation"
     )
-    Column(Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(4.dp))
+    Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()).padding(top = 4.dp, bottom = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Back to library", tint = foreground, modifier = Modifier.size(26.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text("NOW PLAYING", color = foreground, fontSize = 18.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
+                Text("Your music · full player", color = subtleColor, fontSize = 12.sp)
+            }
+        }
+        Spacer(Modifier.height(8.dp))
         Box(
             Modifier.fillMaxWidth().heightIn(max = 320.dp).aspectRatio(1f).padding(4.dp),
             contentAlignment = Alignment.Center
@@ -1577,7 +1589,7 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
                 Text("10s ↷", color = foreground, fontWeight = FontWeight.Bold)
             }
         }
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(18.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onPrevious, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipPrevious, null, tint = foreground, modifier = Modifier.size(34.dp)) }
             Spacer(Modifier.width(18.dp))
