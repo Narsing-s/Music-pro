@@ -48,8 +48,9 @@ These are **candidate gaps**, not instructions to change the current UI. Do them
 
 1. **Now:** run CI and record real-device checks separately; keep M3U hardening and lyric parsing covered by their regression tests.
 2. **Completed:** added optional All / Albums / EPs / Singles filters inside the existing Albums screen. EPs use the explicit local EP flag; singles are inferred from a one-track local group. The default remains All, and filters do not merge or reassign tracks.
-3. **Next, isolated:** improve listening recaps with dated play events before adding monthly/yearly views; the current Insights totals are cumulative and should not be mislabeled as period-specific.
-4. **Only by opt-in:** gesture and artwork presentation preferences.
+3. **Completed:** added date-keyed local listening events and All time / This month / This year recaps, plus an opt-in Optimize action that removes insight-only keys for tracks no longer in the current library. Existing cumulative totals remain available; no analytics are uploaded.
+4. **Next, isolated:** add optional player artwork/gesture settings only if they can be switched off and don't conflict with existing controls.
+5. **Only after tests:** consider richer recap breakdowns (artists/albums and listening streaks) with explicit date semantics.
 
 ## Verification checklist
 
