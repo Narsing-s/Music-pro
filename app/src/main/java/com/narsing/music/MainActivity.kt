@@ -498,12 +498,35 @@ private fun MusicHome(
                         }
                     }
                     Spacer(Modifier.height(14.dp))
-                    Text("RECENT TRACKS", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    if (selectedIndex >= 0 && songs.getOrNull(selectedIndex) != null) {
+                        val currentSong = songs[selectedIndex]
+                        Surface(
+                            color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING" }
+                        ) {
+                            Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Surface(Modifier.size(48.dp), color = Accent.copy(alpha = 0.16f), shape = RoundedCornerShape(12.dp)) {
+                                    Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = Accent, modifier = Modifier.size(26.dp)) }
+                                }
+                                Spacer(Modifier.width(12.dp))
+                                Column(Modifier.weight(1f)) {
+                                    Text("CONTINUE LISTENING", color = Accent, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
+                                    Text(currentSong.title, color = fg, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(currentSong.artist, color = subtle, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                                Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, contentDescription = "Open player", tint = Accent, modifier = Modifier.size(28.dp))
+                            }
+                        }
+                        Spacer(Modifier.height(16.dp))
+                    }
+                    Text("RECENTLY PLAYED", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Text("Pick up where you left off", color = subtle, fontSize = 12.sp, modifier = Modifier.padding(top = 3.dp, bottom = 4.dp))
                     if (songs.isEmpty()) {
                         EmptyState("YOUR LIBRARY IS EMPTY", "Allow audio access and add music to your phone.", "RESCAN LIBRARY", onRefresh)
                     } else {
                         LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
-                            itemsIndexed(songs.take(8), key = { _, song -> song.id }) { _, song ->
+                            itemsIndexed(recentIds.mapNotNull { id -> songs.firstOrNull { it.id == id } }.ifEmpty { songs }.take(8), key = { _, song -> song.id }) { _, song ->
                                 val ix = songs.indexOfFirst { it.id == song.id }
                                 Row(Modifier.fillMaxWidth().clickable { onPlay(ix) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Surface(Modifier.size(58.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
