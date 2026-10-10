@@ -90,6 +90,7 @@ class MainActivity : ComponentActivity() {
                     onGrant = { permissionLauncher.launch(permission) },
                     onRefresh = { refreshLibrary() },
                     onPlay = { playAt(it) },
+                    onPlayNext = { index -> playNext(index) },
                     onToggle = { togglePlayback() },
                     onStop = { mediaController?.pause() },
                     onNext = { mediaController?.let { if (it.hasNextMediaItem()) it.seekToNextMediaItem() else if (songs.isNotEmpty()) it.seekTo(0, 0L) } },
@@ -138,6 +139,19 @@ class MainActivity : ComponentActivity() {
         isPlaying = true
     }
 
+    private fun playNext(index: Int) {
+        if (index !in songs.indices) return
+        val song = songs[index]
+        val item = MediaItem.Builder().setUri(song.uri).setMediaMetadata(
+            MediaMetadata.Builder().setTitle(song.title).setArtist(song.artist).setAlbumTitle(song.album).build()
+        ).build()
+        mediaController?.let { controller ->
+            val insertAt = if (controller.mediaItemCount == 0) 0 else (controller.currentMediaItemIndex + 1).coerceAtLeast(0)
+            controller.addMediaItem(insertAt, item)
+            if (controller.mediaItemCount == 1 && !controller.isPlaying) controller.prepare()
+        }
+    }
+
     private fun togglePlayback() { mediaController?.let { if (it.isPlaying) it.pause() else it.play() } }
 
     override fun onDestroy() {
@@ -151,7 +165,7 @@ class MainActivity : ComponentActivity() {
 private fun MusicHome(
     songs: List<Song>, selectedIndex: Int, playing: Boolean, title: String, artist: String,
     hasPermission: Boolean, onGrant: () -> Unit, onRefresh: () -> Unit,
-    onPlay: (Int) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
+    onPlay: (Int) -> Unit, onPlayNext: (Int) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
     onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit
 ) {
     var tab by remember { mutableStateOf("HOME") }
@@ -410,7 +424,7 @@ private fun MusicHome(
                                 Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.QueueMusic, null, tint = Accent, modifier = Modifier.size(28.dp)) } }
                                 Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) { Text(name, color = fg, fontWeight = FontWeight.Bold); Text("${playlists[name].orEmpty().size} tracks", color = subtle, fontSize = 12.sp) }
-                                TextButton(onClick = { playlists = playlists - name }) { Text("Delete", color = Accent) }
+                                TextButton(onClick = { playlists = playlists - name; if (activePlaylist == name) activePlaylist = null }) { Text("Delete", color = Accent) }
                             }
                             HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
                         }
@@ -469,6 +483,7 @@ private fun MusicHome(
                             Box {
                                 IconButton(onClick = { addToPlaylistSong = song }) { Icon(Icons.Default.Add, contentDescription = "Add to playlist", tint = subtle) }
                                 DropdownMenu(expanded = addToPlaylistSong?.id == song.id, onDismissRequest = { addToPlaylistSong = null }) {
+                                    DropdownMenuItem(text = { Text("Play next") }, onClick = { onPlayNext(originalIndex); addToPlaylistSong = null })
                                     if (playlists.isEmpty()) DropdownMenuItem(text = { Text("Create playlist first") }, onClick = { addToPlaylistSong = null; tab = "PLAYLISTS"; showCreatePlaylist = true })
                                     playlists.keys.sorted().forEach { name -> DropdownMenuItem(text = { Text(if (song.id in playlists[name].orEmpty()) "✓ $name" else name) }, onClick = { val ids = playlists[name].orEmpty(); playlists = playlists + (name to if (song.id in ids) ids else ids + song.id); addToPlaylistSong = null }) }
                                 }
@@ -502,7 +517,7 @@ private fun MusicHome(
         onDismissRequest = { showCreatePlaylist = false },
         title = { Text("Create playlist") },
         text = { OutlinedTextField(value = newPlaylistName, onValueChange = { newPlaylistName = it.take(40) }, label = { Text("Playlist name") }, singleLine = true) },
-        confirmButton = { TextButton(onClick = { val name = newPlaylistName.trim(); if (name.isNotBlank() && name !in playlists) { playlists = playlists + (name to emptyList()); activePlaylist = name }; showCreatePlaylist = false; tab = "PLAYLISTS" }) { Text("Create") } },
+        confirmButton = { TextButton(onClick = { val name = newPlaylistName.trim(); if (name.isNotBlank() && name !in playlists) { val safeName = name.replace("::", "—").replace(",", " ").trim(); if (safeName.isNotBlank() && safeName !in playlists) { playlists = playlists + (safeName to emptyList()); activePlaylist = safeName } }; showCreatePlaylist = false; tab = "PLAYLISTS" }) { Text("Create") } },
         dismissButton = { TextButton(onClick = { showCreatePlaylist = false }) { Text("Cancel") } }
     )
 }
