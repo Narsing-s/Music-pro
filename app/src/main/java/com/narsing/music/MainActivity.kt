@@ -301,7 +301,7 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
         Spacer(Modifier.height(18.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, null, tint = if (shuffle) Accent else Muted, modifier = Modifier.size(26.dp)) }
-            IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = fg, modifier = Modifier.size(30.dp)) }
+            IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = Paper, modifier = Modifier.size(30.dp)) }
             IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = fg, modifier = Modifier.size(30.dp)) }
             IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = fg, modifier = Modifier.size(30.dp)) }
             IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) Accent else Muted, modifier = Modifier.size(26.dp)) }
