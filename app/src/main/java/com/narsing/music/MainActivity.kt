@@ -520,6 +520,40 @@ private fun MusicHome(
                             }
                         }
                     }
+                    val quickListenIndices = songs.indices.filter { songs[it].durationMs in 1L..179_999L }
+                    val longSessionIndices = songs.indices.filter { songs[it].durationMs > 360_000L }
+                    Spacer(Modifier.height(4.dp))
+                    Text("QUICK MIXES", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, fontSize = 12.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        listOf(
+                            Triple("QUICK LISTEN", "Under 3 min", quickListenIndices),
+                            Triple("LONG SESSION", "Over 6 min", longSessionIndices)
+                        ).forEach { mix ->
+                            Surface(
+                                modifier = Modifier.weight(1f).clickable {
+                                    if (mix.third.isNotEmpty()) {
+                                        query = ""
+                                        showFavorites = false
+                                        activePlaylist = null
+                                        tab = "TRACKS"
+                                        onPlayCollection(mix.third.shuffled(), true)
+                                    }
+                                },
+                                enabled = true,
+                                color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Accent)
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(mix.first, color = fg, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 0.4.sp)
+                                    Text(mix.second, color = subtle, fontSize = 10.sp)
+                                    Text("${mix.third.size} tracks", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 5.dp))
+                                }
+                            }
+                        }
+                    }
                     Spacer(Modifier.height(14.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Button(onClick = { if (songs.isNotEmpty()) onPlay(kotlin.random.Random.nextInt(songs.size)) }, colors = ButtonDefaults.buttonColors(containerColor = Accent), shape = RoundedCornerShape(14.dp)) {
