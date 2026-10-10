@@ -34,8 +34,27 @@ class PlaybackService : MediaLibraryService() {
             runCatching {
                 if (equalizer == null || equalizerSessionId != sessionId) {
                     equalizer?.release()
-                    equalizer = Equalizer(0, sessionId).apply { enabled = true }
+                    val effect = Equalizer(0, sessionId)
+                    equalizer = effect
                     equalizerSessionId = sessionId
+
+                    // Restore the user's saved curve when Android creates a new audio session.
+                    // Equalizer instances are session-bound, so a previous instance's bands
+                    // cannot be relied on after playback is recreated or the session changes.
+                    val savedLevels = getSharedPreferences("music_pro_preferences", MODE_PRIVATE)
+                        .getString("equalizer_levels", "0,0,0,0,0")
+                        .orEmpty()
+                        .split(",")
+                        .map { it.toIntOrNull() ?: 0 }
+                    val range = effect.bandLevelRange
+                    for (index in 0 until minOf(5, effect.numberOfBands.toInt())) {
+                        val level = (savedLevels.getOrNull(index) ?: 0) * 100
+                        effect.setBandLevel(
+                            index.toShort(),
+                            level.coerceIn(range[0].toInt(), range[1].toInt()).toShort()
+                        )
+                    }
+                    effect.enabled = true
                 }
                 val effect = equalizer ?: return
                 val band = intent.getIntExtra(EXTRA_BAND, -1)
