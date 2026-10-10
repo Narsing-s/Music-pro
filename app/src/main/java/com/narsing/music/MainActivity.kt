@@ -586,6 +586,34 @@ private fun MusicHome(
                             Text("${dailyMixIndices.size} tracks", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
+                    val radioArtist = songs.getOrNull(selectedIndex)?.artist?.trim().orEmpty()
+                    val artistRadioIndices = if (radioArtist.isNotBlank()) {
+                        songs.indices.filter { songs[it].artist.trim().equals(radioArtist, ignoreCase = true) }
+                    } else emptyList()
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            if (artistRadioIndices.isNotEmpty()) {
+                                query = ""
+                                showFavorites = false
+                                activePlaylist = null
+                                tab = "TRACKS"
+                                onPlayCollection(artistRadioIndices.shuffled(), true)
+                            }
+                        },
+                        enabled = artistRadioIndices.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                    ) {
+                        Icon(Icons.Default.MusicNote, contentDescription = null, tint = Accent)
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+                            Text("ARTIST RADIO", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                            Text(if (radioArtist.isNotBlank()) "Shuffle songs by $radioArtist" else "Play a song to start a station", color = subtle, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        Text("${artistRadioIndices.size}", color = Accent, fontWeight = FontWeight.Bold)
+                    }
                     Spacer(Modifier.height(14.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Button(onClick = { if (songs.isNotEmpty()) onPlay(kotlin.random.Random.nextInt(songs.size)) }, colors = ButtonDefaults.buttonColors(containerColor = Accent), shape = RoundedCornerShape(14.dp)) {
