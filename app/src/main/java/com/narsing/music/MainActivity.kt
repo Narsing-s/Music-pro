@@ -67,6 +67,7 @@ import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -117,11 +118,19 @@ class MainActivity : ComponentActivity() {
         val permission = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_AUDIO else Manifest.permission.READ_EXTERNAL_STORAGE
         hasPermission = ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
         setContent {
+            var fontChoice by remember { mutableStateOf("SANS") }
+            LaunchedEffect(Unit) { fontChoice = getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("font_choice", "SANS") ?: "SANS" }
+            val appFontFamily = when (fontChoice) {
+                "SERIF" -> FontFamily.Serif
+                "MONOSPACE" -> FontFamily.Monospace
+                "CURSIVE" -> FontFamily.Cursive
+                else -> FontFamily.SansSerif
+            }
             val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
                 hasPermission = granted
                 if (granted) refreshLibrary()
             }
-            MaterialTheme(colorScheme = darkColorScheme(primary = Accent, background = Ink, surface = Panel, onBackground = Paper, onSurface = Paper)) {
+            MaterialTheme(typography = Typography(defaultFontFamily = appFontFamily), colorScheme = darkColorScheme(primary = Accent, background = Ink, surface = Panel, onBackground = Paper, onSurface = Paper)) {
                 LaunchedEffect(Unit) {
                     if (!hasPermission) permissionLauncher.launch(permission) else refreshLibrary()
                     connectController()
@@ -131,6 +140,7 @@ class MainActivity : ComponentActivity() {
                 }
                 MusicHome(
                     songs, selectedIndex, isPlaying, currentTitle, currentArtist, hasPermission,
+                    onFontChoiceChange = { choice -> fontChoice = choice; getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit().putString("font_choice", choice).apply() },
                     onGrant = { permissionLauncher.launch(permission) },
                     onRefresh = { refreshLibrary() },
                     onPlay = { playAt(it) },
@@ -278,7 +288,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun MusicHome(
     songs: List<Song>, selectedIndex: Int, playing: Boolean, title: String, artist: String,
-    hasPermission: Boolean, onGrant: () -> Unit, onRefresh: () -> Unit,
+    hasPermission: Boolean, onFontChoiceChange: (String) -> Unit, onGrant: () -> Unit, onRefresh: () -> Unit,
     onPlay: (Int) -> Unit, onPlayCollection: (List<Int>, Boolean) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
     onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit,
     onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit, onSpeed: (Float) -> Unit,
@@ -298,6 +308,8 @@ private fun MusicHome(
     var sleepTimerMinutes by remember { mutableIntStateOf(0) }
     var sleepMenuExpanded by remember { mutableStateOf(false) }
     var showEqualizerDialog by remember { mutableStateOf(false) }
+    var fontMenuExpanded by remember { mutableStateOf(false) }
+    var fontChoice by remember { mutableStateOf("SANS") }
     var equalizerLevels by remember { mutableStateOf(listOf(0f, 0f, 0f, 0f, 0f)) }
     var playlists by remember { mutableStateOf<Map<String, List<Long>>>(emptyMap()) }
     var showCreatePlaylist by remember { mutableStateOf(false) }
@@ -410,6 +422,7 @@ private fun MusicHome(
     LaunchedEffect(Unit) {
         val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
         theme = prefs.getString("theme", "DARK") ?: "DARK"
+        fontChoice = prefs.getString("font_choice", "SANS") ?: "SANS"
         playbackSpeed = prefs.getFloat("playback_speed", 1f).coerceIn(0.5f, 2f)
         equalizerLevels = (prefs.getString("equalizer_levels", "0,0,0,0,0") ?: "0,0,0,0,0").split(",").mapNotNull { it.toFloatOrNull() }.take(5).let { values -> (values + List((5 - values.size).coerceAtLeast(0)) { 0f }).take(5) }
         shuffle = prefs.getBoolean("shuffle_enabled", false)
@@ -518,6 +531,14 @@ private fun MusicHome(
                         DropdownMenuItem(text = { Text("Off") }, onClick = { sleepTimerMinutes = 0; sleepMenuExpanded = false })
                         listOf(15, 30, 45, 60, 90).forEach { minutes ->
                             DropdownMenuItem(text = { Text("Stop after $minutes minutes") }, onClick = { sleepTimerMinutes = minutes; sleepMenuExpanded = false })
+                        }
+                    }
+                }
+                Box {
+                    TextButton(onClick = { fontMenuExpanded = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) { Text("Aa", color = fg, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                    DropdownMenu(expanded = fontMenuExpanded, onDismissRequest = { fontMenuExpanded = false }) {
+                        listOf("SANS" to "Sans serif", "SERIF" to "Serif", "MONOSPACE" to "Monospace", "CURSIVE" to "Cursive").forEach { (choice, label) ->
+                            DropdownMenuItem(text = { Text(if (fontChoice == choice) "✓ $label" else label) }, onClick = { fontChoice = choice; onFontChoiceChange(choice); fontMenuExpanded = false })
                         }
                     }
                 }
