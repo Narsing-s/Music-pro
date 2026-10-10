@@ -1170,7 +1170,7 @@ private fun MusicHome(
                                 AlbumMetadataStore.save(context, originalName, AlbumMetadataOverride(
                                     name = albumNameDraft.trim().take(200),
                                     artists = albumArtistsDraft.trim().take(300),
-                                    year = albumYearDraft.trim().takeIf { it.length == 4 && it.toIntOrNull() in 1000..9999 }.orEmpty(),
+                                    year = albumYearDraft.trim().takeIf { it.length == 4 && it.toIntOrNull()?.let { year -> year in 1000..9999 } == true }.orEmpty(),
                                     genres = albumGenresDraft.split(",").map { it.trim() }.filter { it.isNotBlank() }.distinct().joinToString(", ").take(300),
                                     isEp = albumIsEpDraft
                                 ))
