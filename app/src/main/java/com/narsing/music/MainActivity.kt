@@ -215,7 +215,7 @@ private fun MusicHome(
 }
 
 @Composable
-private fun NowPlaying(title: String, artist: String, playing: Boolean, album: String, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit) {
+private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit) {
     Column(Modifier.fillMaxWidth().weight(1f).padding(top = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth().aspectRatio(1f).padding(12.dp), contentAlignment = Alignment.Center) {
@@ -250,7 +250,7 @@ private fun NowPlaying(title: String, artist: String, playing: Boolean, album: S
 }
 
 @Composable
-private fun EmptyState(title: String, description: String, action: String, onAction: () -> Unit) {
+private fun ColumnScope.EmptyState(title: String, description: String, action: String, onAction: () -> Unit) {
     Column(Modifier.fillMaxWidth().weight(1f), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         Icon(Icons.Default.MusicNote, null, tint = Accent, modifier = Modifier.size(44.dp))
         Spacer(Modifier.height(12.dp))
