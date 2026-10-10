@@ -241,7 +241,7 @@ private fun MusicHome(
     hasPermission: Boolean, onGrant: () -> Unit, onRefresh: () -> Unit,
     onPlay: (Int) -> Unit, onPlayCollection: (List<Int>, Boolean) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
     onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit,
-    onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit,
+    onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit, onSpeed: (Float) -> Unit,
     onDelete: (Song) -> Unit
 ) {
     var tab by remember { mutableStateOf("HOME") }
