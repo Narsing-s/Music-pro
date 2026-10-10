@@ -399,11 +399,15 @@ private fun MusicHome(
         }
     }
 
+    LaunchedEffect(songs) {
+        val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+        artworkUris = songs.mapNotNull { song -> prefs.getString("artwork_${song.id}", null)?.let { song.id to it } }.toMap()
+    }
+
     // Keep personal UI preferences on-device. No library files or playback data are moved.
     LaunchedEffect(Unit) {
         val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
         theme = prefs.getString("theme", "DARK") ?: "DARK"
-        artworkUris = songs.mapNotNull { song -> prefs.getString("artwork_${song.id}", null)?.let { song.id to it } }.toMap()
         playbackSpeed = prefs.getFloat("playback_speed", 1f).coerceIn(0.5f, 2f)
         equalizerLevels = (prefs.getString("equalizer_levels", "0,0,0,0,0") ?: "0,0,0,0,0").split(",").mapNotNull { it.toFloatOrNull() }.take(5).let { values -> (values + List((5 - values.size).coerceAtLeast(0)) { 0f }).take(5) }
         shuffle = prefs.getBoolean("shuffle_enabled", false)
