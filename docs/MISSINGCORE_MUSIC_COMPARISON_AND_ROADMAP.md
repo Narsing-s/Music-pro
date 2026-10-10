@@ -1,51 +1,57 @@
 # Music Pro — Feature Comparison & Safe Roadmap
 
-This review compares Music Pro with [MissingCore/Music](https://github.com/MissingCore/Music), a separate local Android music player. It is a feature-gap review, not a request to copy its interface or source code.
+This review compares Music Pro with [MissingCore/Music](https://github.com/MissingCore/Music), a separate local Android music player. The goal is to borrow general feature ideas—not its source code, branding, assets, or UI—and keep Music Pro's existing interface and behavior intact.
 
-## Preserve these boundaries
+## Non-negotiable boundaries
 
-- Keep Music Pro's current Jetpack Compose interface, navigation, playback flow, and existing behavior unchanged.
-- Do not copy source code, assets, strings, or UI from MissingCore/Music. Its repository declares the **AGPL-3.0** license; any code reuse would need a deliberate license-compatibility review and required compliance. Prefer independently implemented ideas.
-- Add new capabilities only as optional features that fit the existing app, with tests and a real-device check before release.
+- Preserve Music Pro's current Jetpack Compose screens, navigation, layout, controls, and playback behavior.
+- Do not copy source code, assets, strings, or UI from MissingCore/Music. Its repository declares the **AGPL-3.0** license, so code reuse requires deliberate license-compatibility review.
+- Add capabilities behind existing flows or as optional enhancements; do not create duplicate controls, unexplained blank space, or new permissions without a clear need.
+- Require unit tests and a passing Android build for code changes. Real-device checks remain separate.
 
-## Initial feature comparison
+## Source-level feature comparison
 
-| MissingCore/Music feature | Music Pro review | Safe next step |
+| Area | Music Pro status found in source | Remaining opportunity |
 | --- | --- | --- |
-| Local library: tracks, albums, artists, genres, favorites, playlists | Music Pro already has library browsing, favorites, playlists, and genre-related code. | Keep existing behavior; test library consistency and empty states. |
-| Background playback and notification controls | Music Pro uses Media3 PlaybackService. | Regression-test screen-off playback, notification controls, and audio interruptions. |
-| Queue removal and reordering | Music Pro documents queue management. | Test reorder/remove behavior and ensure the active track remains correct. |
-| Equalizer | Music Pro has equalizer controls and recent persistence fixes. | Validate saved curves after service/session recreation and across app restarts. |
-| Sleep timer | Timer-related implementation exists in Music Pro source. | Verify end-to-end behavior before considering any redesign; do not duplicate the control. |
-| Lyrics (embedded, synchronized, provider-based) | Lyrics-related references exist, but full feature parity is not established by this quick source scan. | Inspect current implementation before adding providers or synchronized lyrics. |
-| M3U playlist import/export | M3U-related references exist, but parity and edge-case coverage are not established. | Test import/export, missing files, Unicode paths, and duplicate entries before expanding. |
-| Multi-select actions | No clear multi-select implementation was found in the initial source scan. | Candidate feature: optional bulk selection for queue/library actions, only after confirming demand and designing it to fit existing UI. |
-| Local metadata editor | No clear dedicated metadata-editor implementation was found in the initial source scan. | Candidate feature: edit app-local display metadata first; never silently rewrite the underlying audio file. |
-| Play history, play counts, listening recaps | No clear play-count/recap implementation was found in the initial source scan. | Candidate feature: privacy-friendly local listening history with transparent reset/clear controls. |
-| Custom artwork and extensive theme/font customization | Music Pro has appearance options, but full parity was not established. | Defer until current theme and artwork behavior are fully documented; avoid a broad UI redesign. |
-| Android Auto | Music Pro already declares a Media3 media-library service and automotive descriptor. | Treat as a compatibility verification task first; test on Android Auto or Desktop Head Unit before adding manifest changes. |
-| Additional home-screen widget variants | Music Pro already has a home-screen playback widget. | Test the current widget thoroughly before considering more variants. |
+| Local library, favorites, playlists, genres | Present in current app code. | Keep testing permission recovery, unknown metadata, empty libraries, and duplicate tracks. |
+| Background playback and media notification | Media3 `PlaybackService` and media-library service are declared. | Verify screen-off playback, audio focus, notification actions, and reconnect behavior on physical devices. |
+| Queue management | Queue inspection, play, remove, and move callbacks are present. | Add regression coverage for removing/moving the active and final queue item. |
+| Shuffle and repeat | Present; Shuffle is available in the full player. | Keep the full-player placement and saved state; do not re-add the Home-screen promo. |
+| Equalizer and playback speed | Five-band settings and playback-speed persistence are present. | Validate saved values after process/service recreation and confirm the displayed dB matches applied values. |
+| Sleep timer | Implemented in the existing UI using a cancellable Compose effect. | Test cancellation, changing the timer, leaving/re-entering screens, and playback stopping only when the active timer expires. |
+| Metadata editor | Present; app-local title, artist, and album overrides are stored in preferences. | Keep edits app-local and clearly avoid implying the underlying audio file was rewritten. |
+| Artwork and appearance | Custom artwork and theme/font preferences are present. | Test missing/unreadable artwork URIs and reset behavior; avoid a broad redesign. |
+| Lyrics | Local lyrics editor/import and LRC timestamp parsing are present. This update adds TTML parsing support with tests. | Validate provider/network failures, malformed files, and synchronized seeking on a device. |
+| M3U playlists | Import/export flows are present. | Test malformed files, duplicate/missing tracks, Unicode titles/paths, empty playlists, and round-trip export/import. |
+| Multi-select | Selection state exists in the current screen code. | Audit every bulk action for selection cleanup, cancellation safety, and accurate feedback. |
+| Recent listening | A local recent-track list is persisted (up to 30 IDs). | A richer listening recap/play-count view could be an optional future feature, with clear local-data erase controls. |
+| Android Auto | Media3 media-library service and automotive descriptor are declared. | Verify discoverability and playback in Android Auto / Desktop Head Unit; don't change the manifest unless testing identifies a real gap. |
+| Home-screen widget | A playback widget and receiver are present. | Verify state refresh, multiple widget instances, and behavior after app/process restart. |
 
-## Recommended order
+## Changes made from this comparison
 
-1. **Reliability first:** test playback service, widget state, equalizer persistence, sleep timer, permission recovery, and queue edge cases.
-2. **Playlist portability:** verify M3U import/export and add regression tests for malformed files, missing tracks, and Unicode paths if those flows are supported.
-3. **Optional library productivity:** consider multi-select and app-local metadata editing only after confirming the existing UI can accommodate them without clutter.
-4. **Listening insights:** consider an opt-in, on-device play history/recap feature; keep data local and provide a clear way to erase it.
-5. **Automotive compatibility:** verify the existing Media3 integration before implementing anything new.
+- Added a dedicated timed-lyrics parser that supports existing LRC timestamps and common TTML timed paragraphs.
+- Added regression tests for multi-timestamp LRC lines, TTML paragraphs with nested spans, seconds-based timing, and malformed/untimed input.
+- Kept the existing UI and lyric editing flow unchanged. TTML support is a parser capability; final behavior still needs a real-device check with actual lyric files.
 
-## Acceptance criteria for future additions
+## Recommended next steps
 
-- No regressions to current screens, controls, queue behavior, playback, or saved settings.
-- New features are optional and do not add duplicate buttons or unexplained blank space.
-- Automated tests cover business logic and edge cases.
+1. **Reliability first:** finish phone tests for playback, queue edge cases, widget state, equalizer persistence, timer cancellation, permission recovery, and headphone/Bluetooth interruptions.
+2. **Playlist portability:** harden M3U import/export with tests for malformed input, Unicode, missing media, and duplicates.
+3. **Listening insights:** if added later, make play history opt-in or clearly disclosed, local-only, and easy to clear; don't add network tracking.
+4. **Automotive verification:** test the existing Media3 integration before changing service declarations.
+5. **Accessibility and resilience:** verify touch targets, content descriptions, long-title handling, reduced-animation behavior, and empty/error states without changing the visual design.
+
+## Acceptance criteria
+
+- No regressions to current screens, controls, playback, queue behavior, or saved settings.
+- No copied code/assets/UI from the reference project.
+- New parsing or business logic has automated tests.
 - GitHub Actions passes unit tests and builds the debug APK.
-- Real-device checks are recorded separately; CI success alone is not proof of device compatibility.
+- Real-device results are recorded separately; CI success alone is not proof of Android Auto, audio-focus, or OEM-specific behavior.
 
-## Reference
+## References
 
 - [MissingCore/Music repository and feature list](https://github.com/MissingCore/Music)
 - [MissingCore/Music license](https://github.com/MissingCore/Music/blob/dev/LICENSE)
 - [Music Pro repository](https://github.com/Narsing-s/Music-pro)
-
-This document records candidates for investigation. It does not claim every listed feature is absent or fully implemented in Music Pro; each candidate should be verified against actual behavior before code changes are made.
