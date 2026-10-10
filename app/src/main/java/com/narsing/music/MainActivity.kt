@@ -718,7 +718,25 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
             IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = foreground, modifier = Modifier.size(30.dp)) }
             IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
         }
-        Spacer(Modifier.height(28.dp))
+        Spacer(Modifier.height(8.dp))
+        Box {
+            OutlinedButton(
+                onClick = { speedMenuExpanded = true },
+                shape = RoundedCornerShape(50),
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp)
+            ) {
+                Text("PLAYBACK SPEED  ·  ${playbackSpeed}×", color = foreground, fontWeight = FontWeight.Bold)
+            }
+            DropdownMenu(expanded = speedMenuExpanded, onDismissRequest = { speedMenuExpanded = false }) {
+                listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 1.75f, 2f).forEach { speed ->
+                    DropdownMenuItem(
+                        text = { Text(if (speed == 1f) "1.0× · Normal" else "${speed}×") },
+                        onClick = { onSpeedChange(speed); speedMenuExpanded = false }
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(20.dp))
     }
 }
 
