@@ -1,94 +1,123 @@
 <div align="center">
 
-# 🎧 Narsing Music
+# 🎧 MUSIC PRO
 
 ### Your library. Your sound. Your style.
 
-A modern, local-first Android music player with a clean dark aesthetic, bold red accents, and a dedicated **Quick Mixes** panel.
+**A modern, offline-first Android music player** built for the music already on your phone.
 
 [![Android APK](https://github.com/Narsing-s/Music-pro/actions/workflows/android-apk.yml/badge.svg)](https://github.com/Narsing-s/Music-pro/actions/workflows/android-apk.yml)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Android-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
 [![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/compose)
 [![Media3](https://img.shields.io/badge/Playback-AndroidX%20Media3-34A853)](https://developer.android.com/media/media3)
 
-[**Get the source**](https://github.com/Narsing-s/Music-pro) · [**Builds & APK artifacts**](https://github.com/Narsing-s/Music-pro/actions) · [**Releases**](https://github.com/Narsing-s/Music-pro/releases) · [**Report a bug**](https://github.com/Narsing-s/Music-pro/issues)
+[**Browse source**](https://github.com/Narsing-s/Music-pro) · [**Download a CI build**](https://github.com/Narsing-s/Music-pro/actions/workflows/android-apk.yml) · [**Releases**](https://github.com/Narsing-s/Music-pro/releases) · [**Report an issue**](https://github.com/Narsing-s/Music-pro/issues)
 
 </div>
 
 ---
 
-## ✨ Made for your music
+## ✨ A cleaner way to listen
 
-Narsing Music brings songs stored on your Android device into one focused listening experience. Browse your library, build playlists, discover a mix by track length, and keep listening while you move around the app.
+Music Pro brings your on-device audio into a focused listening experience with a dark-first interface, vivid red accents, and controls where you expect them. Browse your collection, manage the queue, and keep playback going while exploring the app.
 
 <table>
   <tr>
     <td width="50%">
-      <h3>⚡ Quick Mixes</h3>
-      A dedicated Home panel with shuffled <b>Quick Listen</b> and <b>Long Session</b> mixes.
+      <h3>🎲 Shuffle in the player</h3>
+      Find shuffle alongside the full player's playback controls instead of a large Home-screen promo.
     </td>
     <td width="50%">
-      <h3>🎵 Your library</h3>
-      Browse tracks and collections discovered from local device storage.
+      <h3>🎚️ Full playback control</h3>
+      Play, pause, skip, seek, repeat, shuffle, and manage the play queue.
     </td>
   </tr>
   <tr>
     <td>
-      <h3>🎛️ Playback essentials</h3>
-      Play, pause, skip, seek, shuffle, repeat, and manage the queue.
+      <h3>🎵 On-device library</h3>
+      Browse tracks, albums, artists, and available music collections from your device.
     </td>
     <td>
-      <h3>🌙 Keep listening</h3>
-      Media playback service with Android media notification and lock-screen controls.
+      <h3>🧩 Dismissible mini-player</h3>
+      Close the compact player with **×** while browsing. Dismissing the panel does not stop the current song; selecting another track brings it back.
     </td>
   </tr>
   <tr>
     <td>
-      <h3>❤️ Personal collections</h3>
-      Favorites, playlists, and recently played tracks.
+      <h3>❤️ Personal listening</h3>
+      Keep favorites and playlists, and use the available recent-track and queue features.
     </td>
     <td>
-      <h3>🎨 Your look</h3>
-      Dark, light, and custom appearance options with a monochrome and red-accent design.
+      <h3>🎨 Your style</h3>
+      Switch between Dark, Light, and Custom appearance options.
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <h3>⚡ Quick Mixes</h3>
+      Start a shuffled mix for shorter listening or longer sessions from the Home screen.
+    </td>
+    <td>
+      <h3>🔒 Background playback</h3>
+      Use Android media notifications and lock-screen controls where supported.
     </td>
   </tr>
 </table>
 
-## 🚀 Quick Mixes
+## 🏠 Home, without the clutter
 
-Quick Mixes has its own panel on the Home screen, keeping listening shortcuts visually separate from the other library controls.
+The Home screen prioritizes search, Quick Access, and Quick Mixes. The large **Surprise Me** promotional button and the redundant track-statistics strip have been removed to reduce visual clutter. Shuffle remains available in the player, where it belongs.
 
-| Mix | Track length | What happens |
-| --- | --- | --- |
-| **Quick Listen** | Under 3 minutes | Shuffles matching tracks for a shorter listen |
-| **Long Session** | Over 6 minutes | Shuffles matching tracks for a longer session |
+Quick Access provides shortcuts to the Library, Favorites, and Player. The player mini-panel can be dismissed independently of playback, so you can reclaim screen space without interrupting your music.
 
-A mix with no matching songs cannot start playback. Selecting a mix uses the app's existing playback flow and does not edit or delete music files.
+## 🎛️ Playback & Quick Mixes
 
-## 🧭 Explore the library
+| Feature | What it does |
+| --- | --- |
+| **Shuffle** | Shuffle playback from the player controls |
+| **Repeat** | Use the available repeat mode in the player |
+| **Queue** | View and manage queued tracks, including available reorder and remove actions |
+| **Quick Listen** | Create a shuffled mix from tracks shorter than 3 minutes |
+| **Long Session** | Create a shuffled mix from tracks longer than 6 minutes |
+| **Mini-player ×** | Hide the compact player without stopping the current song |
 
-Depending on the available device media and app navigation, browse Home, Tracks, Albums, Artists, Playlists, Favorites, Recent, and other library views. Search by track title, artist, or album, and use the available sorting and duration filters.
+A Quick Mix needs matching tracks in your library to start. Mix selection uses the existing playback flow and does not edit or delete audio files.
 
-Tap a track to start playback. Use the mini-player to return to the player while browsing. The track-details dialog has a **Cancel** option that closes the dialog without changing the track. Share actions use Android's native Sharesheet; review the text before sending it to another app.
+## 🧭 Explore your collection
 
-## 🎧 Background playback
+Use the app's navigation to explore Home, Tracks, Albums, Playlists, Artists, Genres, Favorites, and other available library views. Search by track, artist, or album and use the sorting or filtering options available in your build.
 
-1. Start a song in the app.
-2. Leave the app or lock the phone.
-3. Use the Android media notification or lock-screen controls to manage playback.
-4. If your phone restricts background activity, try setting the app's battery usage to **Unrestricted** in Android Settings.
+Tap a song to play it. Open the full player for playback controls. While browsing, use the mini-player to return to the current track; tap **×** if you want to hide that panel. Starting a different track makes the mini-player available again.
 
-Background behavior depends on Android version and manufacturer settings. Test screen-off playback on your own device. Force-stopping the app, battery exhaustion, revoked permissions, or aggressive power management can interrupt playback.
+## 📱 Background playback
+
+1. Start a song in Music Pro.
+2. Leave the app or lock your phone.
+3. Use the Android media notification or lock-screen controls when available.
+4. If playback is interrupted, review the app's battery/background-activity settings on your device.
+
+Background behavior depends on Android version, device manufacturer, permissions, and power-management settings. Force-stopping the app, battery exhaustion, revoked permissions, or aggressive battery restrictions can interrupt playback. Verify screen-off playback on your own device.
+
+## 📥 Get the Android APK
+
+1. Open [Android APK workflow runs](https://github.com/Narsing-s/Music-pro/actions/workflows/android-apk.yml).
+2. Select the run for the commit you want to test and confirm its status is **successful**.
+3. Open the run's **Artifacts** section and download `narsing-music-debug-apk`.
+4. Extract the ZIP and install `app-debug.apk` on your Android device. Android may ask you to allow installation from that source.
+5. The artifact includes `app-debug.apk.sha256` for checksum verification on a compatible computer or shell.
+
+> [!IMPORTANT]
+> CI artifacts are debug builds intended for testing, not production-signed releases. A successful build confirms compilation and the configured test tasks; it does not replace real-device testing. A debug APK may not install as an update over a version signed with a different key.
 
 ## 🛠️ Build from source
 
 ### Requirements
 
-- Android Studio (recent stable release)
+- Android Studio (recent stable version)
 - JDK 17
-- Android SDK 35
+- Android SDK configured for the project
 
-### Build and run unit-test task
+### Clone and build
 
 ```bash
 git clone https://github.com/Narsing-s/Music-pro.git
@@ -96,48 +125,38 @@ cd Music-pro
 gradle testDebugUnitTest assembleDebug
 ```
 
-APK output:
+The debug APK is generated at:
 
 ```text
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
-You can also open the project in Android Studio and run the `app` configuration after Gradle sync.
+You can also open the project in Android Studio, sync Gradle, and run the `app` configuration.
 
-## 📦 Download a CI build
+## 🔐 Privacy
 
-1. Open [Android APK workflow runs](https://github.com/Narsing-s/Music-pro/actions/workflows/android-apk.yml).
-2. Choose a completed run with a **successful** status for the latest commit you want to test.
-3. In the run's **Artifacts** section, download `narsing-music-debug-apk`.
-4. Extract the ZIP and install `app-debug.apk` on your Android device. You may need to allow installation from that source in Android settings.
-5. The artifact includes `app-debug.apk.sha256`. To verify the APK after extraction, run `sha256sum -c app-debug.apk.sha256` on a computer or compatible shell.
+Music Pro is designed for local listening: it reads audio metadata from your device's media collection and stores app preferences locally. No account is required to use the local music library. Sharing is initiated by you through Android's Sharesheet; review the destination and preview before sending anything.
 
-> [!NOTE]
-> CI artifacts are debug builds intended for testing, not production-signed releases. Check the workflow result for the specific commit before installing; an older successful run does not confirm that the latest source builds successfully. Debug APKs may not install as an update over a differently signed build.
-
-## 🔐 Privacy-first approach
-
-The app reads audio metadata from your device's media collection and stores app preferences locally. It does not require an account or upload your music. Sharing is initiated by the user through Android's Sharesheet; check the share preview before choosing a destination.
+Grant only the Android permissions needed for the features you use. Avoid including private audio, personal listening history, or sensitive device details in public bug reports.
 
 ## 🧪 Project status
 
-Narsing Music is under active development. Please validate changes on a physical Android device before relying on them. Production signing and a signed release APK/AAB workflow are separate from the current debug-build workflow.
+Music Pro is actively developed. The GitHub Actions workflow builds a debug APK and runs the configured unit-test task. Playback, media permissions, device-specific background behavior, and visual layout should still be verified on a physical device before relying on a change. Production signing and a signed release APK/AAB are separate from the debug build.
 
 ## 🤝 Feedback & contributions
 
-- **Bug reports:** [Open a bug report](https://github.com/Narsing-s/Music-pro/issues/new?template=bug_report.yml)
-- **Feature ideas:** [Request a feature](https://github.com/Narsing-s/Music-pro/issues/new?template=feature_request.yml)
-- **Contributing:** Read [CONTRIBUTING.md](https://github.com/Narsing-s/Music-pro/blob/main/CONTRIBUTING.md)
-- **Security:** Read [SECURITY.md](https://github.com/Narsing-s/Music-pro/blob/main/SECURITY.md)
+- **Bug reports:** [Open an issue](https://github.com/Narsing-s/Music-pro/issues)
+- **Source and changes:** [Browse the repository](https://github.com/Narsing-s/Music-pro)
+- **Build status and APK artifacts:** [Android APK workflow](https://github.com/Narsing-s/Music-pro/actions/workflows/android-apk.yml)
 
-When reporting a bug, include Android version, device model, steps to reproduce, and relevant logs with personal data removed. Do not attach private audio files, credentials, or listening history.
+When reporting a bug, include your Android version, device model, steps to reproduce, and relevant logs with personal information removed.
 
 ---
 
 <div align="center">
 
-**Narsing Music**  
-*Made for the music already on your phone.*
+**MUSIC PRO**  
+*Less clutter. More music.*
 
 [Explore the repository →](https://github.com/Narsing-s/Music-pro)
 
