@@ -62,6 +62,16 @@ Music Pro brings your on-device audio into a focused listening experience with a
       Use Android media notifications and lock-screen controls where supported.
     </td>
   </tr>
+  <tr>
+    <td>
+      <h3>🎤 Synchronized lyrics</h3>
+      Import local lyrics and use timed LRC or TTML lyrics where the file format is supported.
+    </td>
+    <td>
+      <h3>📂 Playlist portability</h3>
+      Import and export M3U playlists to move a playlist between compatible music apps.
+    </td>
+  </tr>
 </table>
 
 ## 🏠 Home, without the clutter
