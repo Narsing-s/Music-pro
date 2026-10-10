@@ -1,4 +1,4 @@
-package com.music.pro
+package com.narsing.music
 
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
