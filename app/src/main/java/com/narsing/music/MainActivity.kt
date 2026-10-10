@@ -297,6 +297,13 @@ private fun MusicHome(
         }?.toMap() ?: emptyMap()
         preferencesLoaded = true
     }
+    LaunchedEffect(playbackSpeed, preferencesLoaded) {
+        if (preferencesLoaded) {
+            onSpeed(playbackSpeed)
+            context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+                .edit().putFloat("playback_speed", playbackSpeed).apply()
+        }
+    }
     LaunchedEffect(sleepTimerMinutes) {
         if (sleepTimerMinutes > 0) {
             delay(sleepTimerMinutes * 60_000L)
