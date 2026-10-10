@@ -76,7 +76,7 @@ Music Pro brings your on-device audio into a focused listening experience with a
 
 ## 🌐 Online music + offline library
 
-Music Pro adds an **Online** destination for searching and streaming tracks from the Jamendo independent-music catalog while keeping the existing local library and offline playback.
+Music Pro now opens directly into a discovery-first **Online** screen: it automatically loads independent music when the configured Jamendo catalog is available, supports search and pagination, and includes quick links to YouTube search results for Telugu, Hindi/Bollywood, Tamil, Malayalam, Kannada, and Punjabi movie music. The existing local library and offline playback remain available under Home and the other library tabs.
 
 ### One-time publisher setup (not required from app users)
 
@@ -84,11 +84,11 @@ Music Pro adds an **Online** destination for searching and streaming tracks from
 2. Open this repository's **Settings → Secrets and variables → Actions → New repository secret**.
 3. Add the secret named `JAMENDO_CLIENT_ID` with the publisher's client ID.
 4. Run the **Android APK** workflow again and install that new APK.
-5. Users can open **Online**, search, and play music. They never need to paste a developer ID or open developer settings.
+5. Users can open Music Pro and see the discovery screen immediately, search and play available Jamendo tracks, and load more results. They never need to paste a developer ID or open developer settings.
 
 The ID is injected at build time. It is an application identifier, not a password. If the secret is absent, the app shows a clear publisher-configuration message rather than prompting every user for credentials. Online availability depends on Jamendo's API, internet access, and the app configuration. Check each track's license and attribution terms before reuse or redistribution.
 
-This is a Spotify-inspired listening experience, not Spotify's licensed catalogue. Spotify's platform policy limits streaming to Premium subscribers and prohibits combining Spotify content with content from another service. Online tracks are not automatically available offline; local files and existing local playlists remain available without internet.
+This is a Spotify-inspired interface, not Spotify's licensed catalogue. Movie-music shortcuts open YouTube search results in the installed YouTube app or browser; they do not stream copyrighted movie songs directly inside Music Pro. Jamendo results are independent music, not a substitute for Bollywood or regional film-song licensing. Spotify's platform policy limits streaming to Premium subscribers and prohibits combining Spotify content with content from another service. Online tracks are not automatically available offline; local files and existing local playlists remain available without internet.
 
 ## 🏠 Home, without the clutter
 
