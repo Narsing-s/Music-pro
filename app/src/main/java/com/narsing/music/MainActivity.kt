@@ -256,6 +256,7 @@ private fun MusicHome(
 ) {
     var tab by remember { mutableStateOf("HOME") }
     var query by remember { mutableStateOf("") }
+    var durationFilter by remember { mutableStateOf("ALL") }
     var theme by remember { mutableStateOf("DARK") }
     var showFavorites by remember { mutableStateOf(false) }
     var favorites by remember { mutableStateOf(setOf<Long>()) }
@@ -377,6 +378,7 @@ private fun MusicHome(
     }
     val filtered = sourceSongs.filter { it.title.contains(query, true) || it.artist.contains(query, true) || it.album.contains(query, true) }
         .filter { !showFavorites || it.id in favorites }
+        .filter { song -> when (durationFilter) { "SHORT" -> song.durationMs < 180_000L; "MEDIUM" -> song.durationMs in 180_000L..360_000L; "LONG" -> song.durationMs > 360_000L; else -> true } }
     val sortedFiltered = when (sortMode) {
         "TITLE" -> filtered.sortedBy { it.title.lowercase() }
         "ARTIST" -> filtered.sortedWith(compareBy<Song> { it.artist.lowercase() }.thenBy { it.title.lowercase() })
@@ -418,6 +420,19 @@ private fun MusicHome(
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = fg, unfocusedTextColor = fg, focusedBorderColor = Accent, unfocusedBorderColor = if (theme == "LIGHT") Color.LightGray else Color.DarkGray, cursorColor = Accent)
             )
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                listOf("ALL" to "All tracks", "SHORT" to "Under 3 min", "MEDIUM" to "3–6 min", "LONG" to "Over 6 min").forEach { (filter, label) ->
+                    val active = durationFilter == filter
+                    Surface(
+                        color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.clickable { durationFilter = filter }.padding(vertical = 1.dp)
+                    ) {
+                        Text(label, color = if (active) Color.White else fg, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
+                    }
+                }
+            }
             Spacer(Modifier.height(10.dp))
             OutlinedButton(
                 onClick = {
