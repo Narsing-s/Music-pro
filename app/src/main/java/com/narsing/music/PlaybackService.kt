@@ -45,10 +45,10 @@ class PlaybackService : MediaLibraryService() {
                         .getString("equalizer_levels", "0,0,0,0,0")
                         .orEmpty()
                         .split(",")
-                        .map { it.toIntOrNull() ?: 0 }
+                        .map { it.toFloatOrNull() ?: 0f }
                     val range = effect.bandLevelRange
                     for (index in 0 until minOf(5, effect.numberOfBands.toInt())) {
-                        val level = (savedLevels.getOrNull(index) ?: 0) * 100
+                        val level = ((savedLevels.getOrNull(index) ?: 0f) * 100f).toInt()
                         effect.setBandLevel(
                             index.toShort(),
                             level.coerceIn(range[0].toInt(), range[1].toInt()).toShort()
