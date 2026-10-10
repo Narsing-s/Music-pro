@@ -597,7 +597,7 @@ private fun MusicHome(
                 listOf("HOME", "TRACKS", "ARTISTS", "ALBUMS", "GENRES", "FOLDERS", "RECENT", "PLAYLISTS", "FAVORITES", "NOW PLAYING").forEach { label ->
                     val active = tab == label
                     Surface(color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(50), modifier = Modifier.clickable { tab = label; showFavorites = label == "FAVORITES" }) {
-                        Text(label, color = if (active) Color.White else subtle, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                        Text(label, color = if (active) Color.White else subtle, modifier = Modifier.padding(horizontal = 18.dp, vertical = 13.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 }
             }
@@ -1076,7 +1076,7 @@ private fun MusicHome(
                                 Icon(Icons.Default.MusicNote, null, tint = Accent, modifier = Modifier.size(30.dp)); Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(song.title, color = fg, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
-                                    Text(song.artist, color = subtle, fontSize = 12.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                                    Text(song.artist, color = subtle, fontSize = 14.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                                 }
                                 TextButton(onClick = { activePlaylist?.let { name -> playlists = playlists + (name to playlists[name].orEmpty().filterNot { it == song.id }) } }) { Text("Remove", color = Accent) }
                             }
@@ -1151,8 +1151,8 @@ private fun MusicHome(
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
                     itemsIndexed(sortedFiltered, key = { _, song -> song.id }) { _, song ->
                         val originalIndex = songs.indexOfFirst { it.id == song.id }
-                        Row(Modifier.fillMaxWidth().clickable { if (selectedTrackIds.isNotEmpty()) selectedTrackIds = if (song.id in selectedTrackIds) selectedTrackIds - song.id else selectedTrackIds + song.id else { tab = "NOW PLAYING"; onPlay(originalIndex) } }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Surface(Modifier.size(48.dp), color = if (song.id in selectedTrackIds) Accent.copy(alpha = 0.22f) else Panel, shape = RoundedCornerShape(10.dp)) {
+                        Row(Modifier.fillMaxWidth().clickable { if (selectedTrackIds.isNotEmpty()) selectedTrackIds = if (song.id in selectedTrackIds) selectedTrackIds - song.id else selectedTrackIds + song.id else { tab = "NOW PLAYING"; onPlay(originalIndex) } }.padding(vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(Modifier.size(60.dp), color = if (song.id in selectedTrackIds) Accent.copy(alpha = 0.22f) else Panel, shape = RoundedCornerShape(10.dp)) {
                                 Box(contentAlignment = Alignment.Center) { if (song.id in selectedTrackIds) Text("✓", color = Accent, fontWeight = FontWeight.Black) else Icon(Icons.Default.MusicNote, contentDescription = null, tint = if (originalIndex == selectedIndex) Accent else Muted) }
                             }
                             Spacer(Modifier.width(12.dp))
@@ -1183,8 +1183,8 @@ private fun MusicHome(
             }
             if (selectedIndex >= 0 && songs.getOrNull(selectedIndex) != null) {
                 Surface(color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp), modifier = Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING" }) {
-                    Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Surface(Modifier.size(42.dp), color = Color(0xFF252525), shape = RoundedCornerShape(8.dp)) {
+                    Row(Modifier.padding(horizontal = 16.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Surface(Modifier.size(52.dp), color = Color(0xFF252525), shape = RoundedCornerShape(8.dp)) {
                             Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = Accent) }
                         }
                         Spacer(Modifier.width(10.dp))
