@@ -501,7 +501,26 @@ private fun MusicHome(
                             FilterChip(selected = theme == mode, onClick = { theme = mode }, label = { Text(mode) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Accent, selectedLabelColor = Color.White))
                         }
                     }
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(12.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(
+                            Triple(songs.size.toString(), "TRACKS", "TRACKS"),
+                            Triple(songs.map { it.artist.trim().ifBlank { "Unknown artist" } }.distinct().size.toString(), "ARTISTS", "ARTISTS"),
+                            Triple(songs.map { it.album.trim().ifBlank { "Unknown album" } }.distinct().size.toString(), "ALBUMS", "ALBUMS")
+                        ).forEach { stat ->
+                            Surface(
+                                modifier = Modifier.weight(1f).clickable { tab = stat.third; showFavorites = false; activePlaylist = null },
+                                color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
+                                shape = RoundedCornerShape(14.dp)
+                            ) {
+                                Column(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
+                                    Text(stat.first, color = Accent, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                                    Text(stat.second, color = subtle, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, maxLines = 1)
+                                }
+                            }
+                        }
+                    }
+                    Spacer(Modifier.height(14.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Button(onClick = { if (songs.isNotEmpty()) onPlay(kotlin.random.Random.nextInt(songs.size)) }, colors = ButtonDefaults.buttonColors(containerColor = Accent), shape = RoundedCornerShape(14.dp)) {
                             Icon(Icons.Default.Shuffle, contentDescription = null)
