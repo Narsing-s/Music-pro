@@ -1128,8 +1128,8 @@ private fun MusicHome(
                                 val detailLine = buildList {
                                     add("${albumSongs.size} tracks")
                                     add(displayAlbumArtists)
-                                    albumOverride.year.takeIf { it.isNotBlank() }?.let(::add)
-                                    albumOverride.genres.takeIf { it.isNotBlank() }?.let(::add)
+                                    albumOverride.year.takeIf { it.isNotBlank() }?.let { add(it) }
+                                    albumOverride.genres.takeIf { it.isNotBlank() }?.let { add(it) }
                                     if (albumOverride.isEp) add("EP")
                                 }.joinToString(" • ")
                                 Text(detailLine, color = subtle, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
