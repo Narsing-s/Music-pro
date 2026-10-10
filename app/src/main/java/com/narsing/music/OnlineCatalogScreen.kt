@@ -74,7 +74,9 @@ fun OnlineCatalogScreen(
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     val encodedQuery = URLEncoder.encode(query.trim(), "UTF-8")
-                    val url = URL("https://api.jamendo.com/v3.0/tracks/?client_id=${URLEncoder.encode(key, "UTF-8")}&format=json&limit=30&order=popularity_total&include=licenses&audioformat=mp31&namesearch=$encodedQuery")
+                    // namesearch only matches track titles; search also matches artists, albums and tags.
+                    val queryParameter = if (encodedQuery.isBlank()) "" else "&search=$encodedQuery"
+                    val url = URL("https://api.jamendo.com/v3.0/tracks/?client_id=${URLEncoder.encode(key, "UTF-8")}&format=json&limit=30&order=relevance&audioformat=mp31&type=single+albumtrack$queryParameter")
                     val connection = (url.openConnection() as HttpURLConnection).apply {
                         requestMethod = "GET"
                         connectTimeout = 10000
@@ -86,8 +88,14 @@ fun OnlineCatalogScreen(
                         val status = connection.responseCode
                         if (status !in 200..299) error("Catalog request failed (HTTP $status). Check the client ID and try again.")
                         val root = JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
-                        if (root.optString("headers").contains("error", true)) error(root.optString("headers"))
-                        val data = root.optJSONArray("results") ?: error("The catalog returned no results.")
+                        val headers = root.optJSONObject("headers")
+                        val apiCode = headers?.optInt("code", 0) ?: 0
+                        val apiStatus = headers?.optString("status").orEmpty()
+                        val apiError = headers?.optString("error_message").orEmpty()
+                        if (apiCode != 0 || apiStatus.equals("error", ignoreCase = true)) {
+                            error(apiError.ifBlank { "The music provider rejected this request. Verify the publisher's Jamendo Client ID." })
+                        }
+                        val data = root.optJSONArray("results") ?: error("The provider returned an unexpected response. Please retry.")
                         buildList {
                             for (i in 0 until data.length()) {
                                 val item = data.optJSONObject(i) ?: continue
@@ -114,7 +122,13 @@ fun OnlineCatalogScreen(
                 message = if (found.isEmpty()) "No playable tracks found. Try another search or check your Jamendo app configuration." else "Found ${found.size} tracks • open each license link before reuse."
             }.onFailure { error ->
                 tracks = emptyList()
-                message = error.message ?: "Unable to reach the catalog. Check your connection and client ID."
+                message = when {
+                    error is java.net.UnknownHostException || error is java.net.SocketTimeoutException ->
+                        "Can't reach the music catalog. Check your internet connection and try again."
+                    error.message?.contains("HTTP 401") == true || error.message?.contains("HTTP 403") == true ->
+                        "The music provider rejected this app's Client ID. The publisher must check the Jamendo configuration."
+                    else -> error.message ?: "Unable to reach the catalog. Check your connection and publisher configuration."
+                }
             }
             loading = false
         }
