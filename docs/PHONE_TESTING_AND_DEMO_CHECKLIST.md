@@ -38,7 +38,22 @@ Use this checklist before sharing a build publicly. A successful CI build confir
 
 Record the phone model, Android version, result, and any issue. A test is not passed until it has been tried on a real device.
 
-## 5. Record a 15-second vertical demo
+## 5. Reliability regression checks
+
+Run these checks after installing a fresh CI APK. They validate existing behavior; they do not require any UI redesign or new permissions.
+
+- [ ] **Shuffle placement:** open Now Playing and confirm Shuffle is available there and its enabled state is clear. Confirm there is no duplicate Home-screen shuffle promotion.
+- [ ] **Mini-player dismiss:** start a track, dismiss the mini-player with **×**, and confirm audio continues. Start another track and confirm the mini-player can return.
+- [ ] **Home-screen widget:** add the Music Pro widget if supported. Start playback and verify the displayed title, artist, and play/pause state update as tracks change and playback is paused/resumed.
+- [ ] **Equalizer persistence:** change an equalizer band, leave/reopen the equalizer or recreate playback if practical, and verify the saved curve is restored without an unexpected jump in the displayed dB value.
+- [ ] **Quick Mix edge cases:** test Quick Listen and Long Session with matching tracks, then with no matching tracks. The app should handle an empty match gracefully and should not delete or modify audio files.
+- [ ] **Permission and library recovery:** deny audio permission, verify the app remains usable without crashing, then grant permission and refresh/reopen the library. Confirm tracks load when permission is granted.
+- [ ] **Cancel-safe actions:** open Android's share chooser and cancel it. Confirm playback and the current selection remain unchanged.
+- [ ] **Headphones and interruption:** if available, unplug wired headphones or disconnect Bluetooth during playback, then reconnect. Verify playback follows the device's expected audio-focus behavior.
+
+Record any failure with the Android version and device model. CI success is not proof that widget updates, audio focus, or OEM battery behavior work on every phone.
+
+## 6. Record a 15-second vertical demo
 
 Record the actual phone screen, not a mockup. Keep notifications and private information hidden.
 
