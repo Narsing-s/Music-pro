@@ -23,6 +23,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -60,6 +61,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -316,6 +320,22 @@ private fun MusicHome(
     var showQueueDialog by remember { mutableStateOf(false) }
     var queueEntries by remember { mutableStateOf<List<QueueEntry>>(emptyList()) }
     var pendingExportPlaylistName by remember { mutableStateOf<String?>(null) }
+    var artworkTargetSong by remember { mutableStateOf<Song?>(null) }
+    var artworkUris by remember { mutableStateOf<Map<Long, String>>(emptyMap()) }
+
+    val artworkPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { selectedUri ->
+        val target = artworkTargetSong
+        artworkTargetSong = null
+        if (selectedUri != null && target != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(selectedUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            artworkUris = artworkUris + (target.id to selectedUri.toString())
+            context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit()
+                .putString("artwork_${target.id}", selectedUri.toString()).apply()
+            Toast.makeText(context, "Artwork updated for ${target.title}", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val exportPlaylistLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("audio/x-mpegurl")) { outputUri ->
         val playlistName = pendingExportPlaylistName
@@ -382,7 +402,7 @@ private fun MusicHome(
     // Keep personal UI preferences on-device. No library files or playback data are moved.
     LaunchedEffect(Unit) {
         val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
-        theme = prefs.getString("theme", "DARK") ?: "DARK"
+        theme = prefs.getString("theme", "DARK") ?: "DARK"\n        artworkUris = songs.mapNotNull { song -> prefs.getString("artwork_${song.id}", null)?.let { song.id to it } }.toMap()
         playbackSpeed = prefs.getFloat("playback_speed", 1f).coerceIn(0.5f, 2f)
         equalizerLevels = (prefs.getString("equalizer_levels", "0,0,0,0,0") ?: "0,0,0,0,0").split(",").mapNotNull { it.toFloatOrNull() }.take(5).let { values -> (values + List((5 - values.size).coerceAtLeast(0)) { 0f }).take(5) }
         shuffle = prefs.getBoolean("shuffle_enabled", false)
@@ -477,11 +497,11 @@ private fun MusicHome(
         else -> filtered
     }
     Surface(Modifier.fillMaxSize(), color = bg) {
-        Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
-            Row(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 22.dp)) {
+            Row(Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("MUSIC PRO", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                    Text("MUSIC PRO", color = fg, fontSize = 34.sp, fontWeight = FontWeight.Black, letterSpacing = (-1).sp)
+                    Text("MUSIC PRO", color = fg, fontSize = 38.sp, fontWeight = FontWeight.Black, letterSpacing = (-1).sp)
                 }
                 Box {
                     IconButton(onClick = { sleepMenuExpanded = true }) {
@@ -519,7 +539,7 @@ private fun MusicHome(
                         shape = RoundedCornerShape(50),
                         modifier = Modifier.clickable { durationFilter = filter }.padding(vertical = 1.dp)
                     ) {
-                        Text(label, color = if (active) Color.White else fg, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp))
+                        Text(label, color = if (active) Color.White else fg, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 17.dp, vertical = 12.dp))
                     }
                 }
             }
@@ -557,7 +577,7 @@ private fun MusicHome(
                     Triple("PLAYER", if (playing) "PLAYING" else "OPEN", "NOW PLAYING")
                 ).forEach { item ->
                     Surface(
-                        modifier = Modifier.weight(1f).height(72.dp).clickable {
+                        modifier = Modifier.weight(1f).height(92.dp).clickable {
                             tab = item.third
                             showFavorites = item.third == "FAVORITES"
                         },
@@ -565,8 +585,8 @@ private fun MusicHome(
                         shape = RoundedCornerShape(14.dp)
                     ) {
                         Column(Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 10.dp), verticalArrangement = Arrangement.SpaceBetween) {
-                            Text(item.first, color = subtle, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.7.sp, maxLines = 1)
-                            Text(item.second, color = fg, fontSize = 16.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(item.first, color = subtle, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.7.sp, maxLines = 1)
+                            Text(item.second, color = fg, fontSize = 19.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -898,7 +918,7 @@ private fun MusicHome(
                                     Spacer(Modifier.width(12.dp))
                                     Column(Modifier.weight(1f)) {
                                         Text(song.title, color = fg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        Text(song.artist, color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(song.artist, color = subtle, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
                                     IconButton(onClick = { favorites = if (song.id in favorites) favorites - song.id else favorites + song.id }) {
                                         Icon(if (song.id in favorites) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (song.id in favorites) Accent else subtle)
@@ -912,7 +932,7 @@ private fun MusicHome(
             } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true, lyricsText = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${it.id}", "") }.orEmpty())
+                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, artworkUris[songs.getOrNull(selectedIndex)?.id], { songs.getOrNull(selectedIndex)?.let { artworkTargetSong = it; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true, lyricsText = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${it.id}", "") }.orEmpty())
             } else if (tab == "ARTISTS") {
                 val artists = songs.flatMap { splitArtists(it.artist.ifBlank { "Unknown artist" }) }.distinctBy { it.lowercase() }.sortedBy { it.lowercase() }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
@@ -1136,7 +1156,7 @@ private fun MusicHome(
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(song.title, color = if (originalIndex == selectedIndex) Accent else fg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(song.title, color = if (originalIndex == selectedIndex) Accent else fg, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 Text(song.artist, color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             IconButton(onClick = { favorites = if (song.id in favorites) favorites - song.id else favorites + song.id }) { Icon(if (song.id in favorites) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (song.id in favorites) Accent else subtle) }
@@ -1145,7 +1165,7 @@ private fun MusicHome(
                                 DropdownMenu(expanded = addToPlaylistSong?.id == song.id, onDismissRequest = { addToPlaylistSong = null }) {
                                     DropdownMenuItem(text = { Text("Play next") }, onClick = { onPlayNext(originalIndex); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Track details") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { detailsSong = song; addToPlaylistSong = null })
-                                    DropdownMenuItem(text = { Text("Edit metadata") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { metadataDraftTitle = song.title; metadataDraftArtist = song.artist; metadataDraftAlbum = song.album; editMetadataSong = song; addToPlaylistSong = null })
+                                    DropdownMenuItem(text = { Text("Edit metadata") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { metadataDraftTitle = song.title; metadataDraftArtist = song.artist; metadataDraftAlbum = song.album; editMetadataSong = song; addToPlaylistSong = null })\n                                    DropdownMenuItem(text = { Text(if (artworkUris.containsKey(song.id)) "Change artwork" else "Set custom artwork") }, leadingIcon = { Icon(Icons.Default.Album, contentDescription = null) }, onClick = { artworkTargetSong = song; addToPlaylistSong = null; artworkPickerLauncher.launch(arrayOf("image/*")) })\n                                    if (artworkUris.containsKey(song.id)) DropdownMenuItem(text = { Text("Remove custom artwork") }, onClick = { artworkUris = artworkUris - song.id; context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit().remove("artwork_${song.id}").apply(); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Share audio") }, leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) }, onClick = { onShare(song); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Delete from device", color = Color(0xFFE84B35)) }, onClick = { deleteSong = song; addToPlaylistSong = null })
                                     if (playlists.isEmpty()) DropdownMenuItem(text = { Text("Create playlist first") }, onClick = { addToPlaylistSong = null; tab = "PLAYLISTS"; showCreatePlaylist = true })
@@ -1346,7 +1366,7 @@ private fun MusicHome(
 }
 
 @Composable
-private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit, onOpenLyrics: () -> Unit, hasLyrics: Boolean, lyricsText: String) {
+private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, artworkUri: String?, onChooseArtwork: () -> Unit, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit, onOpenLyrics: () -> Unit, hasLyrics: Boolean, lyricsText: String) {
     var speedMenuExpanded by remember { mutableStateOf(false) }
     val recordMotion = rememberInfiniteTransition(label = "vinyl-record")
     val recordRotation = recordMotion.animateFloat(
@@ -1387,7 +1407,7 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
                 Text(title, color = foreground, fontSize = 24.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                 Text(artist, color = subtleColor, fontSize = 14.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
                 Text(album.uppercase(), color = accentColor, fontSize = 10.sp, letterSpacing = 2.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
-                TextButton(onClick = onOpenLyrics, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)) { Text(if (hasLyrics) "VIEW / EDIT LYRICS" else "ADD LYRICS", color = accentColor, fontSize = 10.sp, letterSpacing = 1.sp) }
+                Row(verticalAlignment = Alignment.CenterVertically) {\n                    TextButton(onClick = onOpenLyrics, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)) { Text(if (hasLyrics) "VIEW / EDIT LYRICS" else "ADD LYRICS", color = accentColor, fontSize = 12.sp, letterSpacing = 0.5.sp) }\n                    TextButton(onClick = onChooseArtwork, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) { Text("ARTWORK", color = accentColor, fontSize = 12.sp) }\n                }
             }
             IconButton(onClick = onToggleFavorite) { Icon(if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites", tint = if (isFavorite) accentColor else subtleColor) }
         }
