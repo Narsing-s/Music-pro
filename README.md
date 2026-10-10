@@ -95,7 +95,7 @@ A Quick Mix needs matching tracks in your library to start. Mix selection uses t
 
 ## 🧭 Explore your collection
 
-Use the app's navigation to explore Home, Tracks, Albums, Playlists, Artists, Genres, Favorites, Insights, and other available library views. Search by track, artist, or album and use the sorting or filtering options available in your build. In Albums, use the edit control to set app-local album name, artists, year, genres, and EP status; these display overrides never modify the original audio files.
+Use the app's navigation to explore Home, Tracks, Albums, Playlists, Artists, Genres, Favorites, Insights, and other available library views. Search by track, artist, or album and use the sorting or filtering options available in your build. In Albums, use the optional All / Albums / EPs / Singles filters to narrow the list. Singles are inferred from one local track, while EPs use the explicit EP flag in album metadata. Use the edit control to set app-local album name, artists, year, genres, and EP status; these display overrides never modify the original audio files.
 
 Tap a song to play it. Open the full player for playback controls. While browsing, use the mini-player to return to the current track; tap **×** if you want to hide that panel. Starting a different track makes the mini-player available again.
 
