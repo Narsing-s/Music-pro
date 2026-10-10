@@ -156,6 +156,8 @@ private fun MusicHome(
     var favorites by remember { mutableStateOf(setOf<Long>()) }
     var shuffle by remember { mutableStateOf(false) }
     var repeat by remember { mutableStateOf(false) }
+    var sortMode by remember { mutableStateOf("DEFAULT") }
+    var sortMenuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var preferencesLoaded by remember { mutableStateOf(false) }
 
@@ -184,6 +186,13 @@ private fun MusicHome(
     val subtle = if (theme == "LIGHT") Color(0xFF69665F) else Muted
     val filtered = songs.filter { it.title.contains(query, true) || it.artist.contains(query, true) || it.album.contains(query, true) }
         .filter { !showFavorites || it.id in favorites }
+    val sortedFiltered = when (sortMode) {
+        "TITLE" -> filtered.sortedBy { it.title.lowercase() }
+        "ARTIST" -> filtered.sortedWith(compareBy<Song> { it.artist.lowercase() }.thenBy { it.title.lowercase() })
+        "LONGEST" -> filtered.sortedByDescending { it.durationMs }
+        "SHORTEST" -> filtered.sortedBy { it.durationMs }
+        else -> filtered
+    }
     Surface(Modifier.fillMaxSize(), color = bg) {
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
             Row(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 20.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -249,6 +258,17 @@ private fun MusicHome(
                             FilterChip(selected = theme == mode, onClick = { theme = mode }, label = { Text(mode) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Accent, selectedLabelColor = Color.White))
                         }
                     }
+                    Spacer(Modifier.height(4.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Button(onClick = { if (songs.isNotEmpty()) onPlay(kotlin.random.Random.nextInt(songs.size)) }, colors = ButtonDefaults.buttonColors(containerColor = Accent), shape = RoundedCornerShape(14.dp)) {
+                            Icon(Icons.Default.Shuffle, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("SURPRISE ME", fontWeight = FontWeight.Bold)
+                        }
+                        OutlinedButton(onClick = { tab = "TRACKS"; showFavorites = false }, shape = RoundedCornerShape(14.dp)) {
+                            Text("ALL TRACKS", color = fg, fontWeight = FontWeight.Bold)
+                        }
+                    }
                     Spacer(Modifier.height(14.dp))
                     Text("RECENT TRACKS", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     if (songs.isEmpty()) {
@@ -282,8 +302,26 @@ private fun MusicHome(
             } else if (filtered.isEmpty()) {
                 EmptyState("NOTHING IN THE LIBRARY", "Add audio files to your phone, then tap rescan.", "RESCAN LIBRARY", onRefresh)
             } else {
+                Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(if (showFavorites || tab == "FAVORITES") "YOUR FAVORITES" else "YOUR COLLECTION", color = fg, fontWeight = FontWeight.Black, fontSize = 18.sp)
+                        Text("${sortedFiltered.size} tracks • ${songs.map { it.artist }.distinct().size} artists", color = subtle, fontSize = 12.sp)
+                    }
+                    Box {
+                        OutlinedButton(onClick = { sortMenuExpanded = true }, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
+                            Icon(Icons.Default.MoreVert, contentDescription = null, tint = fg)
+                            Spacer(Modifier.width(4.dp))
+                            Text(when (sortMode) { "TITLE" -> "Title"; "ARTIST" -> "Artist"; "LONGEST" -> "Longest"; "SHORTEST" -> "Shortest"; else -> "Sort" }, color = fg)
+                        }
+                        DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
+                            listOf("DEFAULT" to "Library order", "TITLE" to "Title A–Z", "ARTIST" to "Artist A–Z", "LONGEST" to "Longest first", "SHORTEST" to "Shortest first").forEach { (mode, label) ->
+                                DropdownMenuItem(text = { Text(label) }, onClick = { sortMode = mode; sortMenuExpanded = false })
+                            }
+                        }
+                    }
+                }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
-                    itemsIndexed(filtered, key = { _, song -> song.id }) { _, song ->
+                    itemsIndexed(sortedFiltered, key = { _, song -> song.id }) { _, song ->
                         val originalIndex = songs.indexOfFirst { it.id == song.id }
                         Row(Modifier.fillMaxWidth().clickable { onPlay(originalIndex) }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Surface(Modifier.size(48.dp), color = Panel, shape = RoundedCornerShape(10.dp)) {
