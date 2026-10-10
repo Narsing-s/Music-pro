@@ -1353,11 +1353,9 @@ private fun MusicHome(
                 }
             },
             confirmButton = {
-                Row {
-                    TextButton(onClick = { metadataDraftTitle = song.title; metadataDraftArtist = song.artist; metadataDraftAlbum = song.album; editMetadataSong = song; detailsSong = null }) { Text("Edit metadata") }
-                    TextButton(onClick = { detailsSong = null }) { Text("Done") }
-                }
-            }
+                TextButton(onClick = { metadataDraftTitle = song.title; metadataDraftArtist = song.artist; metadataDraftAlbum = song.album; editMetadataSong = song; detailsSong = null }) { Text("Edit metadata") }
+            },
+            dismissButton = { TextButton(onClick = { detailsSong = null }) { Text("Cancel") } }
         )
     }
     editMetadataSong?.let { song ->
