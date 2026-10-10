@@ -582,6 +582,13 @@ private fun MusicHome(
                                 Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, contentDescription = "Open player", tint = Accent, modifier = Modifier.size(28.dp))
                             }
                         }
+                        val miniProgress = if (playbackDuration > 0L) (playbackPosition.toFloat() / playbackDuration.toFloat()).coerceIn(0f, 1f) else 0f
+                        Spacer(Modifier.height(4.dp))
+                        Box(
+                            Modifier.fillMaxWidth().height(3.dp).background(if (theme == "LIGHT") Color(0xFFD2CCBE) else Color(0xFF333333), RoundedCornerShape(50))
+                        ) {
+                            Box(Modifier.fillMaxWidth(miniProgress).fillMaxHeight().background(Accent, RoundedCornerShape(50)))
+                        }
                         Spacer(Modifier.height(16.dp))
                     }
                     Text("RECENTLY PLAYED", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
