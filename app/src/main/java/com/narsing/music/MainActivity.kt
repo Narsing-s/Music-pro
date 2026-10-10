@@ -100,7 +100,9 @@ class MainActivity : ComponentActivity() {
                     onNext = { mediaController?.let { if (it.hasNextMediaItem()) it.seekToNextMediaItem() else if (songs.isNotEmpty()) it.seekTo(0, 0L) } },
                     onPrevious = { mediaController?.let { if (it.currentPosition > 3_000L) it.seekTo(0) else if (it.hasPreviousMediaItem()) it.seekToPreviousMediaItem() else if (songs.isNotEmpty()) it.seekTo(songs.lastIndex, 0L) } },
                     onShuffle = { enabled -> mediaController?.shuffleModeEnabled = enabled },
-                    onRepeat = { enabled -> mediaController?.repeatMode = if (enabled) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF }
+                    onRepeat = { enabled -> mediaController?.repeatMode = if (enabled) Player.REPEAT_MODE_ALL else Player.REPEAT_MODE_OFF },
+                    onProgress = { playbackProgress() },
+                    onSeek = { position -> mediaController?.seekTo(position) }
                 )
             }
         }
@@ -166,6 +168,12 @@ class MainActivity : ComponentActivity() {
         runCatching { startActivity(Intent.createChooser(sendIntent, "Share ${song.title}")) }
     }
 
+    private fun playbackProgress(): Pair<Long, Long> {
+        val controller = mediaController ?: return 0L to 0L
+        val duration = controller.duration.takeIf { it > 0L && it != androidx.media3.common.C.TIME_UNSET } ?: 0L
+        return controller.currentPosition.coerceAtLeast(0L) to duration
+    }
+
     private fun togglePlayback() { mediaController?.let { if (it.isPlaying) it.pause() else it.play() } }
 
     override fun onDestroy() {
@@ -180,7 +188,8 @@ private fun MusicHome(
     songs: List<Song>, selectedIndex: Int, playing: Boolean, title: String, artist: String,
     hasPermission: Boolean, onGrant: () -> Unit, onRefresh: () -> Unit,
     onPlay: (Int) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
-    onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit
+    onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit,
+    onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit
 ) {
     var tab by remember { mutableStateOf("HOME") }
     var query by remember { mutableStateOf("") }
@@ -202,6 +211,17 @@ private fun MusicHome(
     var detailsSong by remember { mutableStateOf<Song?>(null) }
     val context = LocalContext.current
     var preferencesLoaded by remember { mutableStateOf(false) }
+    var playbackPosition by remember { mutableLongStateOf(0L) }
+    var playbackDuration by remember { mutableLongStateOf(0L) }
+
+    LaunchedEffect(selectedIndex, playing) {
+        while (selectedIndex >= 0) {
+            val progress = onProgress()
+            playbackPosition = progress.first.coerceAtMost(progress.second.takeIf { it > 0L } ?: Long.MAX_VALUE)
+            playbackDuration = progress.second
+            delay(500L)
+        }
+    }
 
     // Keep personal UI preferences on-device. No library files or playback data are moved.
     LaunchedEffect(Unit) {
@@ -385,7 +405,7 @@ private fun MusicHome(
             } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat)
+                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek)
             } else if (tab == "ARTISTS") {
                 val artists = songs.map { it.artist.ifBlank { "Unknown artist" } }.distinct().sortedBy { it.lowercase() }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
@@ -557,7 +577,7 @@ private fun MusicHome(
 }
 
 @Composable
-private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean) {
+private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit) {
     Column(Modifier.fillMaxWidth().weight(1f).padding(top = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth().aspectRatio(1f).padding(12.dp), contentAlignment = Alignment.Center) {
@@ -577,6 +597,18 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
         Text(title, color = foreground, fontSize = 24.sp, fontWeight = FontWeight.Black, maxLines = 2)
         Text(artist, color = subtleColor, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
         Text(album.uppercase(), color = accentColor, fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.padding(top = 10.dp))
+        Spacer(Modifier.height(24.dp))
+        Slider(
+            value = if (durationMs > 0L) (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f) else 0f,
+            onValueChange = { fraction -> if (durationMs > 0L) { val target = (fraction * durationMs).toLong(); onSeek(target); } },
+            enabled = durationMs > 0L,
+            colors = SliderDefaults.colors(thumbColor = accentColor, activeTrackColor = accentColor, inactiveTrackColor = subtleColor.copy(alpha = 0.35f)),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(formatDuration(positionMs), color = subtleColor, fontSize = 11.sp)
+            Text(formatDuration(durationMs), color = subtleColor, fontSize = 11.sp)
+        }
         Spacer(Modifier.weight(1f))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onPrevious, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipPrevious, null, tint = foreground, modifier = Modifier.size(34.dp)) }
