@@ -287,6 +287,7 @@ private fun MusicHome(
         "ARTIST" -> filtered.sortedWith(compareBy<Song> { it.artist.lowercase() }.thenBy { it.title.lowercase() })
         "LONGEST" -> filtered.sortedByDescending { it.durationMs }
         "SHORTEST" -> filtered.sortedBy { it.durationMs }
+        "NEWEST" -> filtered.sortedByDescending { it.dateAddedSeconds }
         else -> filtered
     }
     Surface(Modifier.fillMaxSize(), color = bg) {
@@ -493,10 +494,10 @@ private fun MusicHome(
                         OutlinedButton(onClick = { sortMenuExpanded = true }, shape = RoundedCornerShape(12.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
                             Icon(Icons.Default.MoreVert, contentDescription = null, tint = fg)
                             Spacer(Modifier.width(4.dp))
-                            Text(when (sortMode) { "TITLE" -> "Title"; "ARTIST" -> "Artist"; "LONGEST" -> "Longest"; "SHORTEST" -> "Shortest"; else -> "Sort" }, color = fg)
+                            Text(when (sortMode) { "TITLE" -> "Title"; "ARTIST" -> "Artist"; "LONGEST" -> "Longest"; "SHORTEST" -> "Shortest"; "NEWEST" -> "Newest"; else -> "Sort" }, color = fg)
                         }
                         DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
-                            listOf("DEFAULT" to "Library order", "TITLE" to "Title A–Z", "ARTIST" to "Artist A–Z", "LONGEST" to "Longest first", "SHORTEST" to "Shortest first").forEach { (mode, label) ->
+                            listOf("DEFAULT" to "Library order", "NEWEST" to "Recently added", "TITLE" to "Title A–Z", "ARTIST" to "Artist A–Z", "LONGEST" to "Longest first", "SHORTEST" to "Shortest first").forEach { (mode, label) ->
                                 DropdownMenuItem(text = { Text(label) }, onClick = { sortMode = mode; sortMenuExpanded = false })
                             }
                         }
