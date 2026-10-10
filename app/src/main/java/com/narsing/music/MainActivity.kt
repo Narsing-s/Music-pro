@@ -81,6 +81,7 @@ private val Muted = Color(0xFF9B9B95)
 private val Accent = Color(0xFFE84B35)
 
 private data class QueueEntry(val index: Int, val title: String, val artist: String, val isCurrent: Boolean)
+private fun splitArtists(value: String): List<String> = value.split(Regex("""\s*(?:;|,|\s&\s|\bfeat\.?\s+|\bft\.?\s+|\bfeaturing\s+)\s*""", RegexOption.IGNORE_CASE)).map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }
 private data class TimedLyric(val timeMs: Long, val text: String)
 private fun parseTimedLyrics(raw: String): List<TimedLyric> {
     val pattern = Regex("\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{1,3}))?\\]")
@@ -913,11 +914,11 @@ private fun MusicHome(
             } else if (tab == "NOW PLAYING") {
                 NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true, lyricsText = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${it.id}", "") }.orEmpty())
             } else if (tab == "ARTISTS") {
-                val artists = songs.map { it.artist.ifBlank { "Unknown artist" } }.distinct().sortedBy { it.lowercase() }
+                val artists = songs.flatMap { splitArtists(it.artist.ifBlank { "Unknown artist" }) }.distinctBy { it.lowercase() }.sortedBy { it.lowercase() }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
                     item { Text("BROWSE ARTISTS", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 10.dp)) }
                     itemsIndexed(artists, key = { _, artistName -> artistName }) { _, artistName ->
-                        val artistSongs = songs.filter { (it.artist.ifBlank { "Unknown artist" }) == artistName }
+                        val artistSongs = songs.filter { artistName in splitArtists(it.artist.ifBlank { "Unknown artist" }) }
                         Row(Modifier.fillMaxWidth().clickable { artistSongs.firstOrNull()?.let { tab = "NOW PLAYING"; onPlay(songs.indexOf(it)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = CircleShape) {
                                 Box(contentAlignment = Alignment.Center) { Text(artistName.take(1).uppercase(), color = Accent, fontSize = 20.sp, fontWeight = FontWeight.Black) }
