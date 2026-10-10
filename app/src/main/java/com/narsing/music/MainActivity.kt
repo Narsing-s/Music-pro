@@ -808,7 +808,7 @@ private fun MusicHome(
                         LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
                             itemsIndexed(recentIds.mapNotNull { id -> songs.firstOrNull { it.id == id } }.ifEmpty { songs }.take(8), key = { _, song -> song.id }) { _, song ->
                                 val ix = songs.indexOfFirst { it.id == song.id }
-                                Row(Modifier.fillMaxWidth().clickable { onPlay(ix) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Row(Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING"; onPlay(ix) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Surface(Modifier.size(58.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
                                         Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Album, null, tint = Accent, modifier = Modifier.size(28.dp)) }
                                     }
@@ -836,7 +836,7 @@ private fun MusicHome(
                     item { Text("BROWSE ARTISTS", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 10.dp)) }
                     itemsIndexed(artists, key = { _, artistName -> artistName }) { _, artistName ->
                         val artistSongs = songs.filter { (it.artist.ifBlank { "Unknown artist" }) == artistName }
-                        Row(Modifier.fillMaxWidth().clickable { artistSongs.firstOrNull()?.let { onPlay(songs.indexOf(it)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().clickable { artistSongs.firstOrNull()?.let { tab = "NOW PLAYING"; onPlay(songs.indexOf(it)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = CircleShape) {
                                 Box(contentAlignment = Alignment.Center) { Text(artistName.take(1).uppercase(), color = Accent, fontSize = 20.sp, fontWeight = FontWeight.Black) }
                             }
@@ -857,7 +857,7 @@ private fun MusicHome(
                     itemsIndexed(albums, key = { _, albumEntry -> albumEntry.first }) { _, albumEntry ->
                         val albumName = albumEntry.first
                         val albumSongs = albumEntry.second
-                        Row(Modifier.fillMaxWidth().clickable { albumSongs.firstOrNull()?.let { onPlay(songs.indexOf(it)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().clickable { albumSongs.firstOrNull()?.let { tab = "NOW PLAYING"; onPlay(songs.indexOf(it)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                             Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
                                 Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Album, contentDescription = null, tint = Accent, modifier = Modifier.size(26.dp)) }
                             }
@@ -928,7 +928,7 @@ private fun MusicHome(
                     }
                     if (filtered.isEmpty()) EmptyState("PLAYLIST IS EMPTY", "Add tracks from your library using the track menu.", "BROWSE TRACKS", { tab = "TRACKS" }) else LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
                         itemsIndexed(sortedFiltered, key = { _, song -> song.id }) { _, song ->
-                            Row(Modifier.fillMaxWidth().clickable { onPlay(songs.indexOfFirst { it.id == song.id }) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Row(Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING"; onPlay(songs.indexOfFirst { it.id == song.id }) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.MusicNote, null, tint = Accent, modifier = Modifier.size(30.dp)); Spacer(Modifier.width(12.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(song.title, color = fg, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
@@ -1001,7 +1001,7 @@ private fun MusicHome(
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
                     itemsIndexed(sortedFiltered, key = { _, song -> song.id }) { _, song ->
                         val originalIndex = songs.indexOfFirst { it.id == song.id }
-                        Row(Modifier.fillMaxWidth().clickable { onPlay(originalIndex) }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING"; onPlay(originalIndex) }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Surface(Modifier.size(48.dp), color = Panel, shape = RoundedCornerShape(10.dp)) {
                                 Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, contentDescription = null, tint = if (originalIndex == selectedIndex) Accent else Muted) }
                             }
