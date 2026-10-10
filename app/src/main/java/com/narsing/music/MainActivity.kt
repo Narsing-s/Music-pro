@@ -281,6 +281,7 @@ private fun MusicHome(
     LaunchedEffect(Unit) {
         val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
         theme = prefs.getString("theme", "DARK") ?: "DARK"
+        playbackSpeed = prefs.getFloat("playback_speed", 1f).coerceIn(0.5f, 2f)
         favorites = prefs.getStringSet("favorites", emptySet())
             ?.mapNotNull { it.toLongOrNull() }
             ?.toSet()
