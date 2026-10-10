@@ -357,6 +357,7 @@ private fun MusicHome(
     var playbackDuration by remember { mutableLongStateOf(0L) }
     var playbackSpeed by remember { mutableFloatStateOf(1f) }
     var showQueueDialog by remember { mutableStateOf(false) }
+    var miniPlayerDismissed by remember { mutableStateOf(false) }
     var queueEntries by remember { mutableStateOf<List<QueueEntry>>(emptyList()) }
     var pendingExportPlaylistName by remember { mutableStateOf<String?>(null) }
     var artworkTargetKey by remember { mutableStateOf<String?>(null) }
@@ -438,6 +439,8 @@ private fun MusicHome(
             }.onFailure { Toast.makeText(context, "Playlist import failed: ${it.message ?: "unknown error"}", Toast.LENGTH_LONG).show() }
         }
     }
+
+    LaunchedEffect(selectedIndex) { miniPlayerDismissed = false }
 
     LaunchedEffect(selectedIndex, playing) {
         while (selectedIndex >= 0) {
@@ -698,24 +701,6 @@ private fun MusicHome(
                         }
                     }
                     Spacer(Modifier.height(12.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf(
-                            Triple(songs.size.toString(), "TRACKS", "TRACKS"),
-                            Triple(songs.map { it.artist.trim().ifBlank { "Unknown artist" } }.distinct().size.toString(), "ARTISTS", "ARTISTS"),
-                            Triple(songs.map { it.album.trim().ifBlank { "Unknown album" } }.distinct().size.toString(), "ALBUMS", "ALBUMS")
-                        ).forEach { stat ->
-                            Surface(
-                                modifier = Modifier.weight(1f).clickable { tab = stat.third; showFavorites = false; activePlaylist = null },
-                                color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
-                                shape = RoundedCornerShape(14.dp)
-                            ) {
-                                Column(Modifier.padding(horizontal = 12.dp, vertical = 12.dp)) {
-                                    Text(stat.first, color = Accent, fontSize = 22.sp, fontWeight = FontWeight.Black)
-                                    Text(stat.second, color = subtle, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp, maxLines = 1)
-                                }
-                            }
-                        }
-                    }
                     val quickListenIndices = songs.indices.filter { songs[it].durationMs in 1L..179_999L }
                     val longSessionIndices = songs.indices.filter { songs[it].durationMs > 360_000L }
                     Surface(
@@ -1350,7 +1335,7 @@ private fun MusicHome(
                     }
                 }
             }
-            if (tab != "NOW PLAYING" && selectedIndex >= 0 && songs.getOrNull(selectedIndex) != null) {
+            if (tab != "NOW PLAYING" && !miniPlayerDismissed && selectedIndex >= 0 && songs.getOrNull(selectedIndex) != null) {
                 Surface(color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp), modifier = Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING" }) {
                     Row(Modifier.padding(horizontal = 16.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Surface(Modifier.size(52.dp), color = Color(0xFF252525), shape = RoundedCornerShape(8.dp)) {
@@ -1364,6 +1349,9 @@ private fun MusicHome(
                         IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = fg) }
                         IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = fg) }
                         IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = fg) }
+                        IconButton(onClick = { miniPlayerDismissed = true }, modifier = Modifier.size(36.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = "Dismiss mini player", tint = subtle, modifier = Modifier.size(18.dp))
+                        }
                     }
                 }
             }
