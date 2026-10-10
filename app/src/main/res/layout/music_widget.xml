@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="14dp"
+    android:background="#171717">
+    <TextView
+        android:id="@+id/widget_brand"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MUSIC PRO"
+        android:textColor="#E84B35"
+        android:textStyle="bold"
+        android:textSize="10sp" />
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Choose a track"
+        android:textColor="#F4F1E8"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:maxLines="1"
+        android:ellipsize="end" />
+    <TextView
+        android:id="@+id/widget_artist"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Your offline library"
+        android:textColor="#9B9B95"
+        android:textSize="12sp"
+        android:maxLines="1"
+        android:ellipsize="end" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="horizontal">
+        <TextView android:id="@+id/widget_previous" android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1" android:gravity="center" android:text="|◀" android:textColor="#F4F1E8" android:textSize="20sp" />
+        <TextView android:id="@+id/widget_play" android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1" android:gravity="center" android:text="▶" android:textColor="#E84B35" android:textSize="24sp" android:textStyle="bold" />
+        <TextView android:id="@+id/widget_next" android:layout_width="0dp" android:layout_height="44dp" android:layout_weight="1" android:gravity="center" android:text="▶|" android:textColor="#F4F1E8" android:textSize="20sp" />
+    </LinearLayout>
+</LinearLayout>
