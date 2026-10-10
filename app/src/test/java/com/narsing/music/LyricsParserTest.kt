@@ -23,6 +23,15 @@ class LyricsParserTest {
     }
 
     @Test
+    fun appliesPositiveAndNegativeLrcOffsetMetadata() {
+        val delayed = parseTimedLyrics("[offset:+1500]\n[00:01.00]Later")
+        assertEquals(listOf(TimedLyric(2_500L, "Later")), delayed)
+
+        val advanced = parseTimedLyrics("[offset:-1500]\n[00:01.00]At start")
+        assertEquals(listOf(TimedLyric(0L, "At start")), advanced)
+    }
+
+    @Test
     fun parsesTtmlParagraphsAndNestedSpans() {
         val ttml = """
             <?xml version="1.0" encoding="UTF-8"?>
