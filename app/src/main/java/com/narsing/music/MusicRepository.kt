@@ -10,7 +10,7 @@ class MusicRepository(private val context: Context) {
         val metadataPrefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
         val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.DATE_ADDED, MediaStore.Audio.Media.DATA)
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
-        val genreBySongId = mutableMapOf<Long, String>()
+        val genresBySongId = mutableMapOf<Long, MutableSet<String>>()
         runCatching {
             context.contentResolver.query(MediaStore.Audio.Genres.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.Audio.Genres._ID, MediaStore.Audio.Genres.NAME), null, null, MediaStore.Audio.Genres.NAME + " COLLATE NOCASE ASC")?.use { genres ->
                 val genreIdCol = genres.getColumnIndexOrThrow(MediaStore.Audio.Genres._ID)
@@ -21,7 +21,7 @@ class MusicRepository(private val context: Context) {
                     val membersUri = MediaStore.Audio.Genres.Members.getContentUri("external", genreId)
                     context.contentResolver.query(membersUri, arrayOf(MediaStore.Audio.Genres.Members.AUDIO_ID), null, null, null)?.use { members ->
                         val audioIdCol = members.getColumnIndexOrThrow(MediaStore.Audio.Genres.Members.AUDIO_ID)
-                        while (members.moveToNext()) genreBySongId.putIfAbsent(members.getLong(audioIdCol), genreName)
+                        while (members.moveToNext()) genresBySongId.getOrPut(members.getLong(audioIdCol)) { linkedSetOf() }.add(genreName)
                     }
                 }
             }
@@ -49,7 +49,8 @@ class MusicRepository(private val context: Context) {
                     uri = ContentUris.withAppendedId(collection, id),
                     dateAddedSeconds = cursor.getLong(dateAddedCol),
                     filePath = cursor.getString(filePathCol).orEmpty(),
-                    genre = genreBySongId[id] ?: "Unknown genre"
+                    genre = genresBySongId[id]?.joinToString("; ") ?: "Unknown genre",
+                    genres = genresBySongId[id]?.toList() ?: listOf("Unknown genre")
                 )
             }
         }
