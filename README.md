@@ -74,6 +74,22 @@ Music Pro brings your on-device audio into a focused listening experience with a
   </tr>
 </table>
 
+## 🌐 Online catalog + offline library
+
+Music Pro keeps the on-device library and adds an **Online** destination for browsing and streaming tracks from the Jamendo catalog. Online streams use the same AndroidX Media3 playback service as local tracks, so playback can continue through the system media notification and lock-screen controls where Android permits it.
+
+### Enable online music
+
+1. Create an application in the [Jamendo developer portal](https://developer.jamendo.com/) and obtain a client ID.
+2. Build and install Music Pro, then open **Online** in the bottom navigation.
+3. Paste the client ID into **Jamendo client ID** and tap **Save ID**.
+4. Search by track or artist and tap a play icon to stream a result.
+5. Use **View track license** to inspect the license information provided by the catalog before reusing or redistributing a track.
+
+The client ID is stored in the app's local preferences and is not hard-coded into the repository. It is a public API identifier, not a substitute for a server-side secret. Catalog access depends on Jamendo API availability, its current terms, network connectivity, and the developer application's settings. This integration does not imply that every catalog track is licensed for every commercial or redistribution use; check each track's license and attribution requirements.
+
+**Offline behavior:** local tracks, local playlists, favorites, and existing player features continue to work without internet. Online catalog tracks require a network connection and are not automatically downloaded for offline use. No streaming catalog can be bundled as universally free music without respecting each provider's rights and terms.
+
 ## 🏠 Home, without the clutter
 
 The Home screen prioritizes search, Quick Access, and Quick Mixes. The large **Surprise Me** promotional button and the redundant track-statistics strip have been removed to reduce visual clutter. Shuffle remains available in the player, where it belongs.
