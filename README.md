@@ -143,6 +143,10 @@ app/build/outputs/apk/debug/app-debug.apk
 
 You can also open the project in Android Studio, sync Gradle, and run the `app` configuration.
 
+## 🎛️ Player controls & home-screen widget
+
+The full Now Playing screen includes **Shuffle** and **Repeat** controls beside playback options. The resizable Music Pro home-screen widget provides previous, play/pause, next, shuffle, and repeat actions; active shuffle/repeat states are highlighted and synchronized with the playback service. Existing app screens and playback flows remain unchanged.
+
 ## 🧩 Playlist reliability
 
 M3U exports preserve Unicode song and playlist names, keep Android media URIs intact, and sanitize multiline track metadata so titles or artist names cannot accidentally create extra playlist entries. The export flow and existing screen layout remain unchanged.
