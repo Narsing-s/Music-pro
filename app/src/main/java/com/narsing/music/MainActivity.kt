@@ -1188,7 +1188,14 @@ private fun MusicHome(
                             runCatching { context.startActivity(Intent.createChooser(shareIntent, "Share playlist")) }
                         }) { Icon(Icons.Default.Share, contentDescription = "Share playlist", tint = Accent) }
                     }
-                    if (filtered.isEmpty()) EmptyState("PLAYLIST IS EMPTY", "Add tracks from your library using the track menu.", "BROWSE TRACKS", { tab = "TRACKS" }) else LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
+                    if (filtered.isEmpty()) {
+                        EmptyState(
+                            if (query.isNotBlank()) "NO MATCHING TRACKS" else "PLAYLIST IS EMPTY",
+                            if (query.isNotBlank()) "No song matched \"$query\" in this view. Try another title, artist, or album." else "Add tracks from your library using the track menu.",
+                            if (query.isNotBlank()) "CLEAR SEARCH" else "BROWSE TRACKS",
+                            { if (query.isNotBlank()) query = "" else tab = "TRACKS" }
+                        )
+                    } else LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
                         itemsIndexed(sortedFiltered, key = { _, song -> song.id }) { _, song ->
                             Row(Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING"; onPlay(songs.indexOfFirst { it.id == song.id }) }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.MusicNote, null, tint = Accent, modifier = Modifier.size(30.dp)); Spacer(Modifier.width(12.dp))
