@@ -45,7 +45,7 @@ Music Pro brings your on-device audio into a focused listening experience with a
   <tr>
     <td>
       <h3>❤️ Personal listening</h3>
-      Keep favorites and playlists, use recent-track and queue features, and open the new **Insights** destination for private on-device play counts and listening time. A play is counted after 30 seconds of active playback; insight history can be cleared independently.
+      Keep favorites and playlists, use recent-track and queue features, and open the **Insights** destination for private on-device play counts and listening time. A play is counted after 30 seconds of active playback; switch between all-time, this-month, and this-year recaps, or use **Optimize** to remove insight entries for tracks no longer in your current library. Insight history can be cleared independently.
     </td>
     <td>
       <h3>🎨 Your style</h3>
