@@ -145,7 +145,7 @@ You can also open the project in Android Studio, sync Gradle, and run the `app` 
 
 ## 🎛️ Player controls & home-screen widget
 
-The full Now Playing screen includes **Shuffle** and **Repeat** controls beside playback options. The resizable Music Pro home-screen widget provides previous, play/pause, next, shuffle, and repeat actions; active shuffle/repeat states are highlighted and synchronized with the playback service. Existing app screens and playback flows remain unchanged.
+The full Now Playing screen includes **Shuffle** and **Repeat** controls beside playback options. Music Pro now provides two independently addable home-screen widget layouts: the original resizable widget and a compact, high-contrast variant. Both provide previous, play/pause, next, shuffle, and repeat actions; active shuffle/repeat states are highlighted and synchronized with the playback service. Add either widget from your Android launcher's Widgets picker. Existing in-app screens and playback flows remain unchanged.
 
 ## 🧩 Playlist reliability
 
