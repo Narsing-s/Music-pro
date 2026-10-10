@@ -1375,7 +1375,9 @@ private fun MusicHome(
                     }
                 }
             } else if (tab == "ONLINE") {
-                OnlineCatalogScreen(foreground = fg, muted = subtle, accent = Accent, panel = Panel, onPlayOnline = onPlayOnline)
+                Box(Modifier.weight(1f)) {
+                    OnlineCatalogScreen(foreground = fg, muted = subtle, accent = Accent, panel = Panel, onPlayOnline = onPlayOnline)
+                }
             } else if (filtered.isEmpty()) {
                 if (query.isNotBlank() && songs.isNotEmpty()) {
                     EmptyState(
