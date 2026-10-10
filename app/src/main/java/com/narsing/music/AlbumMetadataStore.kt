@@ -42,7 +42,7 @@ object AlbumMetadataStore {
         val json = org.json.JSONObject().apply {
             put("name", value.name.trim().take(200))
             put("artists", value.artists.trim().take(300))
-            put("year", value.year.takeIf { it.length == 4 && it.toIntOrNull() in 1000..9999 }.orEmpty())
+            put("year", value.year.takeIf { it.length == 4 && it.toIntOrNull()?.let { year -> year in 1000..9999 } == true }.orEmpty())
             put("genres", value.genres.split(",").map { it.trim() }.filter { it.isNotBlank() }.distinct().joinToString(", ").take(300))
             put("isEp", value.isEp)
         }
