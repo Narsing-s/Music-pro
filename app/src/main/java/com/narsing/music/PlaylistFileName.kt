@@ -7,4 +7,4 @@ package com.narsing.music
 fun safePlaylistFileName(name: String): String =
     name.filterNot { character ->
         character.code < 32 || character in charArrayOf('/', '\\', ':', '*', '?', '"', '<', '>', '|')
-    }.trim().take(120).ifBlank { "Music playlist" }
+    }.trim().trim('.').trim().take(120).ifBlank { "Music playlist" }
