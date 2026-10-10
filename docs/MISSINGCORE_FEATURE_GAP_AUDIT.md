@@ -41,13 +41,15 @@ These are **candidate gaps**, not instructions to change the current UI. Do them
 - **Completed:** both widget variants share the same Media3 playback session behavior and refresh on track changes, play/pause, shuffle, and repeat state changes.
 - **Completed:** added a separate Insights destination that tracks active listening time locally and counts a play after 30 seconds. Users can clear only insight data without clearing favorites or recent-track history.
 - **Completed:** added album metadata overrides for display name, album artists, year, genres, and EP flag. The edit is stored in app preferences and does not rewrite audio tags or combine album groups.
+- **Completed:** added optional All / Albums / EPs / Singles filters to the existing Albums list. All remains the default; no navigation or playback behavior changes.
 - **Not yet device-verified:** launcher rendering, narrow-width clipping, widget button interaction, Insights screen, and album editor on physical devices.
 
 ## Safe implementation order
 
 1. **Now:** run CI and record real-device checks separately; keep M3U hardening and lyric parsing covered by their regression tests.
-2. **Next, isolated:** add explicit album grouping filters (album / EP / single) only after deciding how existing albums with the same display name should be handled.
-3. **Only by opt-in:** gesture and artwork presentation preferences.
+2. **Completed:** added optional All / Albums / EPs / Singles filters inside the existing Albums screen. EPs use the explicit local EP flag; singles are inferred from a one-track local group. The default remains All, and filters do not merge or reassign tracks.
+3. **Next, isolated:** improve listening recaps with dated play events before adding monthly/yearly views; the current Insights totals are cumulative and should not be mislabeled as period-specific.
+4. **Only by opt-in:** gesture and artwork presentation preferences.
 
 ## Verification checklist
 
