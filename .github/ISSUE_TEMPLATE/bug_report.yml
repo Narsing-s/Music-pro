@@ -1,0 +1,69 @@
+name: Bug report
+description: Report a reproducible problem in Narsing Music
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues first. Do not attach private audio files, credentials, or personal data.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the problem clearly.
+      placeholder: Playback stops when the screen turns off.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Number the steps so the problem can be repeated.
+      placeholder: |
+        1. Open the app
+        2. Start a track
+        3. Lock the phone
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: App version or commit
+      placeholder: "0.4.0 or short commit SHA"
+    validations:
+      required: false
+  - type: input
+    id: device
+    attributes:
+      label: Device model
+      placeholder: "e.g. device manufacturer and model"
+    validations:
+      required: false
+  - type: input
+    id: android-version
+    attributes:
+      label: Android version
+      placeholder: "e.g. Android 14"
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs (optional)
+      description: Remove personal information, tokens, and private file paths before posting.
+    validations:
+      required: false
