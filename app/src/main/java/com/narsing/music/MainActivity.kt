@@ -872,13 +872,10 @@ private fun MusicHome(
                         }
                     }
                     Spacer(Modifier.height(14.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Button(onClick = { if (songs.isNotEmpty()) onPlay(kotlin.random.Random.nextInt(songs.size)) }, colors = ButtonDefaults.buttonColors(containerColor = Accent), shape = RoundedCornerShape(14.dp)) {
-                            Icon(Icons.Default.Shuffle, contentDescription = null)
-                            Spacer(Modifier.width(6.dp))
-                            Text("SURPRISE ME", fontWeight = FontWeight.Bold)
-                        }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start, verticalAlignment = Alignment.CenterVertically) {
                         OutlinedButton(onClick = { tab = "TRACKS"; showFavorites = false }, shape = RoundedCornerShape(14.dp)) {
+                            Icon(Icons.Default.LibraryMusic, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
                             Text("ALL TRACKS", color = fg, fontWeight = FontWeight.Bold)
                         }
                     }
@@ -1682,12 +1679,37 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, album: String,
             IconButton(onClick = onNext, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipNext, null, tint = foreground, modifier = Modifier.size(34.dp)) }
         }
         Spacer(Modifier.height(18.dp))
-        // Previous, play/pause and next already appear in the primary control row above.
-        // Keep only playback modes here to avoid duplicate operations.
+        // Clearly labeled playback modes live in the full player, not on Home.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = if (shuffle) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
-            Spacer(Modifier.width(22.dp))
-            IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, contentDescription = "Repeat", tint = if (repeat) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
+            OutlinedButton(
+                onClick = onShuffle,
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = if (shuffle) accentColor.copy(alpha = 0.16f) else Color.Transparent,
+                    contentColor = if (shuffle) accentColor else foreground
+                ),
+                border = BorderStroke(1.dp, if (shuffle) accentColor else subtleColor.copy(alpha = 0.45f)),
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 9.dp)
+            ) {
+                Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(7.dp))
+                Text(if (shuffle) "SHUFFLE ON" else "SHUFFLE", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+            Spacer(Modifier.width(12.dp))
+            OutlinedButton(
+                onClick = onRepeat,
+                shape = RoundedCornerShape(50),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = if (repeat) accentColor.copy(alpha = 0.16f) else Color.Transparent,
+                    contentColor = if (repeat) accentColor else foreground
+                ),
+                border = BorderStroke(1.dp, if (repeat) accentColor else subtleColor.copy(alpha = 0.45f)),
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 9.dp)
+            ) {
+                Icon(Icons.Default.Repeat, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(7.dp))
+                Text(if (repeat) "REPEAT ON" else "REPEAT", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
         }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
