@@ -201,7 +201,13 @@ class MainActivity : ComponentActivity() {
                         override fun onMediaItemTransition(item: MediaItem?, reason: Int) {
                             currentTitle = item?.mediaMetadata?.title?.toString() ?: "Choose a track"
                             currentArtist = item?.mediaMetadata?.artist?.toString() ?: "Your offline library"
-                            selectedIndex = songs.indexOfFirst { it.title == currentTitle && it.artist == currentArtist }
+                            // Match by URI first so duplicate titles/artists don't desync the UI
+                            // when the player automatically advances through its queued tracks.
+                            val transitionedUri = item?.localConfiguration?.uri
+                            selectedIndex = songs.indexOfFirst { song ->
+                                (transitionedUri != null && song.uri == transitionedUri) ||
+                                    (song.title == currentTitle && song.artist == currentArtist)
+                            }
                         }
                     })
                 }
