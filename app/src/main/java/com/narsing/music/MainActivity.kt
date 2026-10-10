@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.session.MediaController
@@ -82,8 +83,10 @@ class MainActivity : ComponentActivity() {
                     onRefresh = { refreshLibrary() },
                     onPlay = { playAt(it) },
                     onToggle = { togglePlayback() },
-                    onNext = { if (songs.isNotEmpty()) playAt(if (selectedIndex + 1 < songs.size) selectedIndex + 1 else 0) },
-                    onPrevious = { if (songs.isNotEmpty()) playAt(if (selectedIndex > 0) selectedIndex - 1 else songs.lastIndex) }
+                    onNext = { mediaController?.let { if (it.hasNextMediaItem()) it.seekToNextMediaItem() else if (songs.isNotEmpty()) it.seekTo(0, 0L) } },
+                    onPrevious = { mediaController?.let { if (it.currentPosition > 3_000L) it.seekTo(0) else if (it.hasPreviousMediaItem()) it.seekToPreviousMediaItem() else if (songs.isNotEmpty()) it.seekTo(songs.lastIndex, 0L) } },
+                    onShuffle = { enabled -> mediaController?.shuffleModeEnabled = enabled },
+                    onRepeat = { enabled -> mediaController?.repeatMode = if (enabled) C.REPEAT_MODE_ALL else C.REPEAT_MODE_OFF }
                 )
             }
         }
@@ -139,7 +142,8 @@ class MainActivity : ComponentActivity() {
 private fun MusicHome(
     songs: List<Song>, selectedIndex: Int, playing: Boolean, title: String, artist: String,
     hasPermission: Boolean, onGrant: () -> Unit, onRefresh: () -> Unit,
-    onPlay: (Int) -> Unit, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit
+    onPlay: (Int) -> Unit, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
+    onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit
 ) {
     var tab by remember { mutableStateOf("HOME") }
     var query by remember { mutableStateOf("") }
@@ -223,7 +227,7 @@ private fun MusicHome(
             } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle }, onRepeat = { repeat = !repeat }, shuffle = shuffle, repeat = repeat)
+                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat)
             } else if (filtered.isEmpty()) {
                 EmptyState("NOTHING IN THE LIBRARY", "Add audio files to your phone, then tap rescan.", "RESCAN LIBRARY", onRefresh)
             } else {
@@ -302,7 +306,7 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, null, tint = if (shuffle) Accent else Muted, modifier = Modifier.size(26.dp)) }
             IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = Paper, modifier = Modifier.size(30.dp)) }
-            IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = fg, modifier = Modifier.size(30.dp)) }
+            IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Paper, modifier = Modifier.size(30.dp)) }
             IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = fg, modifier = Modifier.size(30.dp)) }
             IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) Accent else Muted, modifier = Modifier.size(26.dp)) }
         }
