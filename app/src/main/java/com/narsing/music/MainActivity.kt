@@ -887,6 +887,22 @@ private fun MusicHome(
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         TextButton(onClick = { activePlaylist = null }) { Text("‹ PLAYLISTS", color = Accent) }
                         Text(activePlaylist ?: "", modifier = Modifier.weight(1f), color = fg, fontSize = 18.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        IconButton(
+                            onClick = {
+                                val ids = playlists[activePlaylist].orEmpty()
+                                val indices = ids.mapNotNull { id -> songs.indexOfFirst { it.id == id }.takeIf { it >= 0 } }
+                                if (indices.isNotEmpty()) onPlayCollection(indices, false)
+                            },
+                            enabled = playlists[activePlaylist].orEmpty().isNotEmpty()
+                        ) { Icon(Icons.Default.PlayArrow, contentDescription = "Play playlist", tint = Accent) }
+                        IconButton(
+                            onClick = {
+                                val ids = playlists[activePlaylist].orEmpty()
+                                val indices = ids.mapNotNull { id -> songs.indexOfFirst { it.id == id }.takeIf { it >= 0 } }
+                                if (indices.isNotEmpty()) onPlayCollection(indices, true)
+                            },
+                            enabled = playlists[activePlaylist].orEmpty().isNotEmpty()
+                        ) { Icon(Icons.Default.Shuffle, contentDescription = "Shuffle playlist", tint = Accent) }
                         IconButton(onClick = {
                             val name = activePlaylist ?: "Music playlist"
                             val trackLines = playlists[name].orEmpty().mapNotNull { id -> songs.find { it.id == id } }
