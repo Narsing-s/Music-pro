@@ -121,7 +121,8 @@ class MainActivity : ComponentActivity() {
                         QueueEntry(index, item.mediaMetadata.title?.toString().orEmpty().ifBlank { "Unknown track" }, item.mediaMetadata.artist?.toString().orEmpty().ifBlank { "Unknown artist" }, index == controller.currentMediaItemIndex)
                     } } ?: emptyList() },
                     onPlayQueueItem = { index -> mediaController?.let { it.seekTo(index, 0L); it.play() } },
-                    onRemoveQueueItem = { index -> mediaController?.let { controller -> if (index in 0 until controller.mediaItemCount) controller.removeMediaItem(index) } }
+                    onRemoveQueueItem = { index -> mediaController?.let { controller -> if (index in 0 until controller.mediaItemCount) controller.removeMediaItem(index) } },
+                    onMoveQueueItem = { from, to -> mediaController?.let { controller -> if (from in 0 until controller.mediaItemCount && to in 0 until controller.mediaItemCount) controller.moveMediaItem(from, to) } }
                 )
             }
         }
@@ -250,7 +251,7 @@ private fun MusicHome(
     onPlay: (Int) -> Unit, onPlayCollection: (List<Int>, Boolean) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
     onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit,
     onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit, onSpeed: (Float) -> Unit,
-    onDelete: (Song) -> Unit, onGetQueue: () -> List<QueueEntry>, onPlayQueueItem: (Int) -> Unit, onRemoveQueueItem: (Int) -> Unit
+    onDelete: (Song) -> Unit, onGetQueue: () -> List<QueueEntry>, onPlayQueueItem: (Int) -> Unit, onRemoveQueueItem: (Int) -> Unit, onMoveQueueItem: (Int, Int) -> Unit
 ) {
     var tab by remember { mutableStateOf("HOME") }
     var query by remember { mutableStateOf("") }
@@ -652,7 +653,13 @@ private fun MusicHome(
                             Text(if (entry.isCurrent) "▶  ${entry.title}" else entry.title, color = if (entry.isCurrent) Accent else fg, fontWeight = if (entry.isCurrent) FontWeight.Bold else FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(entry.artist, color = subtle, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
-                        TextButton(onClick = { onRemoveQueueItem(entry.index); queueEntries = onGetQueue() }) { Text("REMOVE", color = Accent, fontSize = 10.sp) }
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Row {
+                                TextButton(enabled = entry.index > 0, onClick = { onMoveQueueItem(entry.index, entry.index - 1); queueEntries = onGetQueue() }, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) { Text("↑", color = fg) }
+                                TextButton(enabled = entry.index < queueEntries.lastIndex, onClick = { onMoveQueueItem(entry.index, entry.index + 1); queueEntries = onGetQueue() }, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) { Text("↓", color = fg) }
+                            }
+                            TextButton(onClick = { onRemoveQueueItem(entry.index); queueEntries = onGetQueue() }, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) { Text("REMOVE", color = Accent, fontSize = 9.sp) }
+                        }
                     }
                     HorizontalDivider(color = Color(0xFF292929))
                 }
