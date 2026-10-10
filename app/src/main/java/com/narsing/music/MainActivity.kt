@@ -1527,7 +1527,7 @@ private fun MusicHome(
                     Column {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Text(label, modifier = Modifier.weight(1f), color = Paper, fontSize = 12.sp)
-                            Text((equalizerLevels[band] * 100f).toInt().toString() + " dB", color = Accent, fontSize = 12.sp)
+                            Text("%.1f dB".format(equalizerLevels[band]), color = Accent, fontSize = 12.sp)
                         }
                         Slider(
                             value = equalizerLevels[band],
