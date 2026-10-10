@@ -162,14 +162,12 @@ class PlaybackService : MediaLibraryService() {
     private fun refreshWidgetState() {
         val currentPlayer = player ?: return
         val item = currentPlayer.currentMediaItem
-        MusicWidgetProvider.refresh(
-            this,
-            item?.mediaMetadata?.title?.toString() ?: "Choose a track",
-            item?.mediaMetadata?.artist?.toString() ?: "Your offline library",
-            currentPlayer.isPlaying,
-            currentPlayer.shuffleModeEnabled,
-            currentPlayer.repeatMode != Player.REPEAT_MODE_OFF
-        )
+        val title = item?.mediaMetadata?.title?.toString() ?: "Choose a track"
+        val artist = item?.mediaMetadata?.artist?.toString() ?: "Your offline library"
+        val shuffle = currentPlayer.shuffleModeEnabled
+        val repeat = currentPlayer.repeatMode != Player.REPEAT_MODE_OFF
+        MusicWidgetProvider.refresh(this, title, artist, currentPlayer.isPlaying, shuffle, repeat)
+        MusicCompactWidgetProvider.refresh(this, title, artist, currentPlayer.isPlaying, shuffle, repeat)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = mediaSession
