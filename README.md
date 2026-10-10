@@ -25,7 +25,7 @@ Music Pro brings your on-device audio into a focused listening experience with a
   <tr>
     <td width="50%">
       <h3>🎲 Shuffle in the player</h3>
-      Find shuffle alongside the full player's playback controls instead of a large Home-screen promo.
+      Use the clearly labeled **SHUFFLE / SHUFFLE ON** control beside Repeat in the full player, instead of a large Home-screen promo.
     </td>
     <td width="50%">
       <h3>🎚️ Full playback control</h3>
@@ -74,7 +74,7 @@ Quick Access provides shortcuts to the Library, Favorites, and Player. The playe
 
 | Feature | What it does |
 | --- | --- |
-| **Shuffle** | Shuffle playback from the player controls |
+| **Shuffle** | Tap the labeled Shuffle control in the full player; its highlighted state shows when shuffle is enabled |
 | **Repeat** | Use the available repeat mode in the player |
 | **Queue** | View and manage queued tracks, including available reorder and remove actions |
 | **Quick Listen** | Create a shuffled mix from tracks shorter than 3 minutes |
