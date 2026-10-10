@@ -540,7 +540,6 @@ private fun MusicHome(
                                         onPlayCollection(mix.third.shuffled(), true)
                                     }
                                 },
-                                enabled = true,
                                 color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
                                 shape = RoundedCornerShape(14.dp)
                             ) {
