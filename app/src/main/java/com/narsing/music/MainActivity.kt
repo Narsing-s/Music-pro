@@ -353,6 +353,7 @@ private fun MusicHome(
     var artworkUris by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var insightRefreshVersion by remember { mutableIntStateOf(0) }
     var albumMetadataRefreshVersion by remember { mutableIntStateOf(0) }
+    var albumFilter by remember { mutableStateOf("ALL") }
     var editingAlbumName by remember { mutableStateOf<String?>(null) }
     var albumNameDraft by remember { mutableStateOf("") }
     var albumArtistsDraft by remember { mutableStateOf("") }
@@ -1107,9 +1108,34 @@ private fun MusicHome(
                     }
                 }
             } else if (tab == "ALBUMS") {
-                val albums = remember(songs, albumMetadataRefreshVersion) { songs.groupBy { it.album.ifBlank { "Unknown album" } }.toList().sortedBy { AlbumMetadataStore.get(context, it.first).name.ifBlank { it.first }.lowercase() } }
+                val allAlbums = remember(songs, albumMetadataRefreshVersion) { songs.groupBy { it.album.ifBlank { "Unknown album" } }.toList().sortedBy { AlbumMetadataStore.get(context, it.first).name.ifBlank { it.first }.lowercase() } }
+                val albums = allAlbums.filter { (originalName, tracks) ->
+                    val override = AlbumMetadataStore.get(context, originalName)
+                    when (albumFilter) {
+                        "ALBUMS" -> !override.isEp && tracks.size > 1
+                        "EPS" -> override.isEp
+                        "SINGLES" -> !override.isEp && tracks.size == 1
+                        else -> true
+                    }
+                }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
-                    item { Text("BROWSE ALBUMS", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 10.dp)) }
+                    item {
+                        Text("BROWSE ALBUMS", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 10.dp))
+                        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            listOf("ALL", "ALBUMS", "EPS", "SINGLES").forEach { filter ->
+                                val selected = albumFilter == filter
+                                TextButton(onClick = { albumFilter = filter }, contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp)) {
+                                    Text(
+                                        when (filter) { "ALL" -> "All"; "ALBUMS" -> "Albums"; "EPS" -> "EPs"; else -> "Singles" },
+                                        color = if (selected) Accent else subtle,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
+                        Text("${albums.size} collections", color = subtle, fontSize = 11.sp, modifier = Modifier.padding(bottom = 4.dp))
+                    }
                     itemsIndexed(albums, key = { _, albumEntry -> albumEntry.first }) { _, albumEntry ->
                         val albumName = albumEntry.first
                         val albumSongs = albumEntry.second
