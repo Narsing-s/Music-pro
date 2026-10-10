@@ -14,7 +14,27 @@ import androidx.media3.session.SessionToken
 
 class MusicWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
+        // Render immediately, then sync with the active playback session when available.
         ids.forEach { id -> render(context, manager, id, "Choose a track", "Your offline library", false) }
+        syncWidgets(context, manager, ids)
+    }
+
+    private fun syncWidgets(context: Context, manager: AppWidgetManager, widgetIds: IntArray) {
+        if (widgetIds.isEmpty()) return
+        val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
+        val future = MediaController.Builder(context, token).buildAsync()
+        future.addListener({
+            runCatching {
+                val controller = future.get()
+                val item = controller.currentMediaItem
+                val title = item?.mediaMetadata?.title?.toString() ?: "Choose a track"
+                val artist = item?.mediaMetadata?.artist?.toString() ?: "Your offline library"
+                widgetIds.forEach { id -> render(context, manager, id, title, artist, controller.isPlaying) }
+                MediaController.releaseFuture(future)
+            }.onFailure {
+                MediaController.releaseFuture(future)
+            }
+        }, ContextCompat.getMainExecutor(context))
     }
 
     override fun onReceive(context: Context, intent: Intent) {
