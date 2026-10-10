@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -413,10 +414,35 @@ private fun MusicHome(
             OutlinedTextField(
                 value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Search tracks, artists, albums", color = Muted) }, singleLine = true,
+                trailingIcon = { if (query.isNotEmpty()) IconButton(onClick = { query = "" }) { Icon(Icons.Default.Close, contentDescription = "Clear search", tint = subtle) } },
                 shape = RoundedCornerShape(14.dp),
                 colors = OutlinedTextFieldDefaults.colors(focusedTextColor = fg, unfocusedTextColor = fg, focusedBorderColor = Accent, unfocusedBorderColor = if (theme == "LIGHT") Color.LightGray else Color.DarkGray, cursorColor = Accent)
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = {
+                    if (songs.isNotEmpty()) {
+                        query = ""
+                        showFavorites = false
+                        activePlaylist = null
+                        tab = "TRACKS"
+                        onPlayCollection(songs.indices.toList(), true)
+                    }
+                },
+                enabled = songs.isNotEmpty(),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                contentPadding = PaddingValues(vertical = 14.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = fg)
+            ) {
+                Icon(Icons.Default.Shuffle, contentDescription = null, tint = Accent)
+                Spacer(Modifier.width(10.dp))
+                Column(horizontalAlignment = Alignment.Start) {
+                    Text("SURPRISE ME", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Text("Shuffle your whole music library", color = subtle, fontSize = 11.sp)
+                }
+            }
+            Spacer(Modifier.height(14.dp))
             Text("QUICK ACCESS", color = subtle, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
