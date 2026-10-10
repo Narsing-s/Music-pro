@@ -1,4 +1,4 @@
-package com.narsing.music
+package com.music.pro
 
 import android.content.ContentUris
 import android.content.Context
