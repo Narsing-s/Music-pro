@@ -531,7 +531,7 @@ private fun MusicHome(
                             Triple("LONG SESSION", "Over 6 min", longSessionIndices)
                         ).forEach { mix ->
                             Surface(
-                                modifier = Modifier.weight(1f).clickable {
+                                onClick = {
                                     if (mix.third.isNotEmpty()) {
                                         query = ""
                                         showFavorites = false
@@ -540,6 +540,7 @@ private fun MusicHome(
                                         onPlayCollection(mix.third.shuffled(), true)
                                     }
                                 },
+                                modifier = Modifier.weight(1f),
                                 color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel,
                                 shape = RoundedCornerShape(14.dp)
                             ) {
