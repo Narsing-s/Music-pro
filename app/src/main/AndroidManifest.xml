@@ -39,8 +39,9 @@
             android:exported="true"
             android:stopWithTask="false">
             <intent-filter>
-                <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="androidx.media3.session.MediaLibraryService" />
             </intent-filter>
+            <meta-data android:name="android.media.browse.MediaBrowserService" android:resource="@xml/automotive_app_desc" />
         </service>
     </application>
 </manifest>
