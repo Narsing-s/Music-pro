@@ -637,31 +637,6 @@ private fun MusicHome(
                 Text(if (sleepTimerMinutes > 0) "SLEEP TIMER · ${sleepTimerMinutes} MIN" else "OFFLINE LIBRARY", color = if (sleepTimerMinutes > 0) Accent else subtle, fontSize = 10.sp, letterSpacing = 1.sp)
             }
             Spacer(Modifier.height(12.dp))
-            if (tab == "HOME") {
-            OutlinedButton(
-                onClick = {
-                    if (songs.isNotEmpty()) {
-                        query = ""
-                        showFavorites = false
-                        activePlaylist = null
-                        tab = "TRACKS"
-                        onPlayCollection(songs.indices.toList(), true)
-                    }
-                },
-                enabled = songs.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                contentPadding = PaddingValues(vertical = 14.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = fg)
-            ) {
-                Icon(Icons.Default.Shuffle, contentDescription = null, tint = Accent)
-                Spacer(Modifier.width(10.dp))
-                Column(horizontalAlignment = Alignment.Start) {
-                    Text("SURPRISE ME", fontWeight = FontWeight.Black, letterSpacing = 1.sp)
-                    Text("Shuffle your whole music library", color = subtle, fontSize = 11.sp)
-                }
-            }
-            Spacer(Modifier.height(14.dp))
             Text("QUICK ACCESS", color = subtle, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -686,7 +661,6 @@ private fun MusicHome(
                 }
             }
             Spacer(Modifier.height(14.dp))
-            }
             }
             Spacer(Modifier.height(4.dp))
             }
