@@ -266,6 +266,7 @@ private fun MusicHome(
     var preferencesLoaded by remember { mutableStateOf(false) }
     var playbackPosition by remember { mutableLongStateOf(0L) }
     var playbackDuration by remember { mutableLongStateOf(0L) }
+    var playbackSpeed by remember { mutableFloatStateOf(1f) }
 
     LaunchedEffect(selectedIndex, playing) {
         while (selectedIndex >= 0) {
