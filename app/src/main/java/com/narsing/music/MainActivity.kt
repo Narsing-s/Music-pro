@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.app.Activity
 import android.provider.MediaStore
@@ -294,6 +295,60 @@ private fun MusicHome(
     var playbackSpeed by remember { mutableFloatStateOf(1f) }
     var showQueueDialog by remember { mutableStateOf(false) }
     var queueEntries by remember { mutableStateOf<List<QueueEntry>>(emptyList()) }
+    var pendingExportPlaylistName by remember { mutableStateOf<String?>(null) }
+
+    val exportPlaylistLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("audio/x-mpegurl")) { outputUri ->
+        val playlistName = pendingExportPlaylistName
+        pendingExportPlaylistName = null
+        if (outputUri != null && playlistName != null) {
+            runCatching {
+                val entries = playlists[playlistName].orEmpty().mapNotNull { id -> songs.firstOrNull { it.id == id } }
+                val lines = mutableListOf("#EXTM3U")
+                entries.forEach { song ->
+                    lines += "#EXTINF:${(song.durationMs / 1000L).coerceAtLeast(0L)},${song.title} - ${song.artist}"
+                    lines += song.uri.toString()
+                }
+                context.contentResolver.openOutputStream(outputUri)?.bufferedWriter()?.use { it.write(lines.joinToString("\\n")) }
+                    ?: error("Could not open the selected file")
+                Toast.makeText(context, "Exported ${entries.size} tracks", Toast.LENGTH_SHORT).show()
+            }.onFailure { Toast.makeText(context, "Playlist export failed: ${it.message ?: "unknown error"}", Toast.LENGTH_LONG).show() }
+        }
+    }
+    val importPlaylistLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { inputUri ->
+        if (inputUri != null) {
+            runCatching {
+                val lines = context.contentResolver.openInputStream(inputUri)?.bufferedReader()?.use { it.readLines() }
+                    ?: error("Could not read the selected playlist")
+                var pendingTitle: String? = null
+                val matchedIds = mutableListOf<Long>()
+                lines.forEach { raw ->
+                    val line = raw.trim()
+                    when {
+                        line.startsWith("#EXTINF:", ignoreCase = true) -> pendingTitle = line.substringAfter(',', "").trim()
+                        line.isNotEmpty() && !line.startsWith("#") -> {
+                            val exact = songs.firstOrNull { it.uri.toString() == line }
+                            val titleAndArtist = pendingTitle?.split(" - ", limit = 2)
+                            val match = exact ?: songs.firstOrNull { song ->
+                                titleAndArtist?.getOrNull(0)?.equals(song.title, ignoreCase = true) == true &&
+                                    (titleAndArtist.getOrNull(1).isNullOrBlank() || titleAndArtist?.getOrNull(1)?.equals(song.artist, ignoreCase = true) == true)
+                            } ?: songs.firstOrNull { song -> pendingTitle?.equals(song.title, ignoreCase = true) == true }
+                            if (match != null && match.id !in matchedIds) matchedIds += match.id
+                            pendingTitle = null
+                        }
+                    }
+                }
+                if (matchedIds.isEmpty()) error("No playlist tracks matched music on this device")
+                val suggestedName = inputUri.lastPathSegment?.substringAfterLast('/')?.substringBeforeLast('.')?.takeIf { it.isNotBlank() } ?: "Imported playlist"
+                var name = suggestedName.take(40)
+                var suffix = 2
+                while (name in playlists) { name = "${suggestedName.take(34)} (${suffix++})" }
+                playlists = playlists + (name to matchedIds)
+                activePlaylist = name
+                tab = "PLAYLISTS"
+                Toast.makeText(context, "Imported ${matchedIds.size} tracks", Toast.LENGTH_SHORT).show()
+            }.onFailure { Toast.makeText(context, "Playlist import failed: ${it.message ?: "unknown error"}", Toast.LENGTH_LONG).show() }
+        }
+    }
 
     LaunchedEffect(selectedIndex, playing) {
         while (selectedIndex >= 0) {
@@ -881,6 +936,7 @@ private fun MusicHome(
                 Column(Modifier.weight(1f)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Text("YOUR PLAYLISTS", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.weight(1f))
+                        OutlinedButton(onClick = { importPlaylistLauncher.launch(arrayOf("audio/x-mpegurl", "audio/mpegurl", "application/octet-stream", "text/plain")) }, contentPadding = PaddingValues(horizontal = 10.dp)) { Text("IMPORT M3U", color = fg, fontSize = 10.sp) }
                         Button(onClick = { newPlaylistName = ""; showCreatePlaylist = true }, colors = ButtonDefaults.buttonColors(containerColor = Accent)) { Icon(Icons.Default.Add, null); Spacer(Modifier.width(4.dp)); Text("CREATE") }
                     }
                     if (playlists.isEmpty()) EmptyState("NO PLAYLISTS YET", "Create a playlist and add your favorite tracks.", "CREATE PLAYLIST", { showCreatePlaylist = true }) else LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
@@ -892,6 +948,7 @@ private fun MusicHome(
                                     Text(name, color = fg, fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
                                     Text("${playlists[name].orEmpty().size} tracks", color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
+                                TextButton(onClick = { pendingExportPlaylistName = name; exportPlaylistLauncher.launch("${name.replace(Regex("[^A-Za-z0-9 _-]"), "").ifBlank { "Music playlist" }}.m3u") }) { Text("Export", color = Accent) }
                                 TextButton(onClick = { playlists = playlists - name; if (activePlaylist == name) activePlaylist = null }) { Text("Delete", color = Accent) }
                             }
                             HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
