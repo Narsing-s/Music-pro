@@ -6,7 +6,8 @@ import org.xmlpull.v1.XmlPullParser
 data class TimedLyric(val timeMs: Long, val text: String)
 
 /**
- * Parses common LRC timestamps and TTML/SRT-like TTML paragraph timing.
+ * Parses common LRC timestamps and TTML timed paragraphs.
+ * LRC [offset:...] metadata is applied in milliseconds; negative results are clamped to zero.
  * The input is only read locally; no lyrics or listening data are uploaded.
  */
 fun parseTimedLyrics(raw: String): List<TimedLyric> {
@@ -16,15 +17,25 @@ fun parseTimedLyrics(raw: String): List<TimedLyric> {
 }
 
 private fun parseLrc(raw: String): List<TimedLyric> {
-    val pattern = Regex("\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{1,3}))?\\]")
-    return raw.lineSequence().flatMap { line ->
-        val matches = pattern.findAll(line).toList()
-        val lyric = pattern.replace(line, "").trim()
+    val lines = raw.lineSequence().toList()
+    val timestampPattern = Regex("\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{1,3}))?\\]")
+    val offsetMs = Regex("(?i)^\\[offset:\\s*([+-]?\\d+)\\]\\s*$")
+        .findAll(raw)
+        .lastOrNull()
+        ?.groupValues
+        ?.get(1)
+        ?.toLongOrNull()
+        ?: 0L
+
+    return lines.asSequence().flatMap { line ->
+        val matches = timestampPattern.findAll(line).toList()
+        val lyric = timestampPattern.replace(line, "").trim()
         if (matches.isEmpty() || lyric.isBlank()) emptySequence() else matches.asSequence().map { match ->
             val minutes = match.groupValues[1].toLongOrNull() ?: 0L
             val seconds = match.groupValues[2].toLongOrNull() ?: 0L
             val fraction = match.groupValues[3].padEnd(3, '0').take(3).toLongOrNull() ?: 0L
-            TimedLyric((minutes * 60L + seconds) * 1000L + fraction, lyric)
+            val originalTimeMs = (minutes * 60L + seconds) * 1000L + fraction
+            TimedLyric((originalTimeMs + offsetMs).coerceAtLeast(0L), lyric)
         }
     }.sortedBy { it.timeMs }.toList()
 }
