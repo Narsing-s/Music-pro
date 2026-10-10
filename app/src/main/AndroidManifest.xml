@@ -36,6 +36,21 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/music_widget_info" />
         </receiver>
+        <receiver
+            android:name=".MusicCompactWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.narsing.music.widget.PLAY" />
+                <action android:name="com.narsing.music.widget.PREVIOUS" />
+                <action android:name="com.narsing.music.widget.NEXT" />
+                <action android:name="com.narsing.music.widget.SHUFFLE" />
+                <action android:name="com.narsing.music.widget.REPEAT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/music_widget_compact_info" />
+        </receiver>
         <service
             android:name=".PlaybackService"
             android:foregroundServiceType="mediaPlayback"
