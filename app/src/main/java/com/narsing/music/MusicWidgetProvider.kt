@@ -69,6 +69,12 @@ class MusicWidgetProvider : AppWidgetProvider() {
         const val ACTION_PREVIOUS = "com.narsing.music.widget.PREVIOUS"
         const val ACTION_NEXT = "com.narsing.music.widget.NEXT"
 
+        fun refresh(context: Context, title: String, artist: String, playing: Boolean) {
+            val manager = AppWidgetManager.getInstance(context)
+            val ids = manager.getAppWidgetIds(ComponentName(context, MusicWidgetProvider::class.java))
+            ids.forEach { id -> render(context, manager, id, title, artist, playing) }
+        }
+
         private fun render(context: Context, manager: AppWidgetManager, id: Int, title: String, artist: String, playing: Boolean) {
             val views = RemoteViews(context.packageName, R.layout.music_widget)
             views.setTextViewText(R.id.widget_title, title)
