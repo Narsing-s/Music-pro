@@ -1,0 +1,114 @@
+name: Release Android Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "New app version (for example 0.5.0)"
+        required: true
+        type: string
+      release_notes:
+        description: "Release notes shown on GitHub Releases"
+        required: false
+        default: "Bug fixes, improvements, and a better listening experience."
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: manual-android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish selected version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate version and prepare version bump
+        env:
+          VERSION_NAME: ${{ inputs.version_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$VERSION_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version '$VERSION_NAME'. Use a version such as 0.5.0 or 0.5.0-rc1."
+            exit 1
+          fi
+          TAG="v$VERSION_NAME"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists. Choose a new version."
+            exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists on origin. Choose a new version."
+            exit 1
+          fi
+          VERSION_NAME="$VERSION_NAME" python3 - <<'PY'
+          import os, re
+          from pathlib import Path
+          path = Path("app/build.gradle.kts")
+          content = path.read_text()
+          code_match = re.search(r'versionCode\s*=\s*(\d+)', content)
+          name_match = re.search(r'versionName\s*=\s*"[^"]+"', content)
+          if not code_match or not name_match:
+              raise SystemExit("Could not find versionCode/versionName in app/build.gradle.kts")
+          next_code = int(code_match.group(1)) + 1
+          content = re.sub(r'versionCode\s*=\s*\d+', f'versionCode = {next_code}', content, count=1)
+          content = re.sub(r'versionName\s*=\s*"[^"]+"', f'versionName = "{os.environ["VERSION_NAME"]}"', content, count=1)
+          path.write_text(content)
+          print(f"Prepared versionName={os.environ['VERSION_NAME']} versionCode={next_code}")
+          PY
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run tests and build installable APK
+        run: gradle testDebugUnitTest assembleDebug
+
+      - name: Generate APK checksum
+        run: |
+          cd app/build/outputs/apk/debug
+          sha256sum app-debug.apk | tee app-debug.apk.sha256
+
+      - name: Commit version bump and create release tag
+        env:
+          VERSION_NAME: ${{ inputs.version_name }}
+        run: |
+          set -euo pipefail
+          TAG="v$VERSION_NAME"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/build.gradle.kts
+          git commit -m "chore: release $TAG"
+          git push origin HEAD:main
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+
+      - name: Publish GitHub Release with APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION_NAME: ${{ inputs.version_name }}
+          RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          set -euo pipefail
+          cp app/build/outputs/apk/debug/app-debug.apk "Music-pro-v${VERSION_NAME}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk.sha256 "Music-pro-v${VERSION_NAME}.apk.sha256"
+          gh release create "$TAG" \
+            "Music-pro-v${VERSION_NAME}.apk" \
+            "Music-pro-v${VERSION_NAME}.apk.sha256" \
+            --title "Music-pro v${VERSION_NAME}" \
+            --notes "$RELEASE_NOTES"
