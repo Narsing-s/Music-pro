@@ -156,6 +156,7 @@ private fun MusicHome(
     var favorites by remember { mutableStateOf(setOf<Long>()) }
     var shuffle by remember { mutableStateOf(false) }
     var repeat by remember { mutableStateOf(false) }
+    var recentIds by remember { mutableStateOf<List<Long>>(emptyList()) }
     var sortMode by remember { mutableStateOf("DEFAULT") }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -169,7 +170,16 @@ private fun MusicHome(
             ?.mapNotNull { it.toLongOrNull() }
             ?.toSet()
             ?: emptySet()
+        recentIds = prefs.getString("recent_ids", "")
+            ?.split(",")?.mapNotNull { it.toLongOrNull() }?.distinct()?.take(30)
+            ?: emptyList()
         preferencesLoaded = true
+    }
+    LaunchedEffect(selectedIndex, songs) {
+        val song = songs.getOrNull(selectedIndex) ?: return@LaunchedEffect
+        recentIds = (listOf(song.id) + recentIds.filter { it != song.id }).take(30)
+        context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
+            .edit().putString("recent_ids", recentIds.joinToString(",")).apply()
     }
     LaunchedEffect(theme, favorites, preferencesLoaded) {
         if (preferencesLoaded) {
@@ -184,7 +194,8 @@ private fun MusicHome(
     val bg = when (theme) { "LIGHT" -> Color(0xFFF4F1E8); "CUSTOM" -> Color(0xFF17111F); else -> Ink }
     val fg = if (theme == "LIGHT") Ink else Paper
     val subtle = if (theme == "LIGHT") Color(0xFF69665F) else Muted
-    val filtered = songs.filter { it.title.contains(query, true) || it.artist.contains(query, true) || it.album.contains(query, true) }
+    val sourceSongs = if (tab == "RECENT") recentIds.mapNotNull { id -> songs.find { it.id == id } } else songs
+    val filtered = sourceSongs.filter { it.title.contains(query, true) || it.artist.contains(query, true) || it.album.contains(query, true) }
         .filter { !showFavorites || it.id in favorites }
     val sortedFiltered = when (sortMode) {
         "TITLE" -> filtered.sortedBy { it.title.lowercase() }
@@ -240,7 +251,7 @@ private fun MusicHome(
             }
             Spacer(Modifier.height(14.dp))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("HOME", "TRACKS", "FAVORITES", "NOW PLAYING").forEach { label ->
+                listOf("HOME", "TRACKS", "ARTISTS", "ALBUMS", "RECENT", "FAVORITES", "NOW PLAYING").forEach { label ->
                     val active = tab == label
                     Surface(color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(50), modifier = Modifier.clickable { tab = label; showFavorites = label == "FAVORITES" }) {
                         Text(label, color = if (active) Color.White else subtle, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
@@ -299,8 +310,49 @@ private fun MusicHome(
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
                 NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat)
+            } else if (tab == "ARTISTS") {
+                val artists = songs.map { it.artist.ifBlank { "Unknown artist" } }.distinct().sortedBy { it.lowercase() }
+                LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
+                    item { Text("BROWSE ARTISTS", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 10.dp)) }
+                    itemsIndexed(artists, key = { _, artistName -> artistName }) { _, artistName ->
+                        val artistSongs = songs.filter { (it.artist.ifBlank { "Unknown artist" }) == artistName }
+                        Row(Modifier.fillMaxWidth().clickable { artistSongs.firstOrNull()?.let { onPlay(songs.indexOf(it)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = CircleShape) {
+                                Box(contentAlignment = Alignment.Center) { Text(artistName.take(1).uppercase(), color = Accent, fontSize = 20.sp, fontWeight = FontWeight.Black) }
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(artistName, color = fg, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text("${artistSongs.size} tracks", color = subtle, fontSize = 12.sp)
+                            }
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Play artist", tint = Accent)
+                        }
+                        HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
+                    }
+                }
+            } else if (tab == "ALBUMS") {
+                val albums = songs.groupBy { it.album.ifBlank { "Unknown album" } }.toList().sortedBy { it.first.lowercase() }
+                LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
+                    item { Text("BROWSE ALBUMS", color = fg, fontSize = 20.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(vertical = 10.dp)) }
+                    itemsIndexed(albums, key = { _, albumEntry -> albumEntry.first }) { _, albumEntry ->
+                        val albumName = albumEntry.first
+                        val albumSongs = albumEntry.second
+                        Row(Modifier.fillMaxWidth().clickable { albumSongs.firstOrNull()?.let { onPlay(songs.indexOf(it)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
+                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Album, contentDescription = null, tint = Accent, modifier = Modifier.size(26.dp)) }
+                            }
+                            Spacer(Modifier.width(12.dp))
+                            Column(Modifier.weight(1f)) {
+                                Text(albumName, color = fg, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text("${albumSongs.size} tracks • ${albumSongs.firstOrNull()?.artist ?: "Unknown artist"}", color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Play album", tint = Accent)
+                        }
+                        HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
+                    }
+                }
             } else if (filtered.isEmpty()) {
-                EmptyState("NOTHING IN THE LIBRARY", "Add audio files to your phone, then tap rescan.", "RESCAN LIBRARY", onRefresh)
+                EmptyState(if (tab == "RECENT") "NO RECENT TRACKS YET" else "NOTHING IN THE LIBRARY", if (tab == "RECENT") "Play a song and it will appear here." else "Add audio files to your phone, then tap rescan.", "RESCAN LIBRARY", onRefresh)
             } else {
                 Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
