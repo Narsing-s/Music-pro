@@ -644,6 +644,35 @@ private fun MusicHome(
                         }
                         Text("${artistRadioIndices.size}", color = Accent, fontWeight = FontWeight.Bold)
                     }
+                    val currentAlbum = songs.getOrNull(selectedIndex)?.album?.trim().orEmpty()
+                    val albumFlowIndices = if (currentAlbum.isNotBlank()) {
+                        songs.indices.filter { songs[it].album.trim().equals(currentAlbum, ignoreCase = true) }
+                            .sortedBy { songs[it].dateAddedSeconds }
+                    } else emptyList()
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            if (albumFlowIndices.isNotEmpty()) {
+                                query = ""
+                                showFavorites = false
+                                activePlaylist = null
+                                tab = "TRACKS"
+                                onPlayCollection(albumFlowIndices, false)
+                            }
+                        },
+                        enabled = albumFlowIndices.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                    ) {
+                        Icon(Icons.Default.Album, contentDescription = null, tint = Accent)
+                        Spacer(Modifier.width(10.dp))
+                        Column(Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+                            Text("ALBUM FLOW", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                            Text(if (currentAlbum.isNotBlank()) "Play through $currentAlbum" else "Play a song to start an album", color = subtle, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                        Text("${albumFlowIndices.size}", color = Accent, fontWeight = FontWeight.Bold)
+                    }
                     Spacer(Modifier.height(14.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Button(onClick = { if (songs.isNotEmpty()) onPlay(kotlin.random.Random.nextInt(songs.size)) }, colors = ButtonDefaults.buttonColors(containerColor = Accent), shape = RoundedCornerShape(14.dp)) {
