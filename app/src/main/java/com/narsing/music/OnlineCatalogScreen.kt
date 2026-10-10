@@ -1,6 +1,5 @@
 package com.narsing.music
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -55,18 +54,17 @@ fun OnlineCatalogScreen(
     onPlayOnline: (String, String, String, String) -> Unit
 ) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE) }
-    var clientId by remember { mutableStateOf(prefs.getString("jamendo_client_id", "") ?: "") }
+    val clientId = BuildConfig.JAMENDO_CLIENT_ID.trim()
     var query by remember { mutableStateOf("") }
     var tracks by remember { mutableStateOf<List<CatalogTrack>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf("Add your Jamendo API client ID to browse openly licensed music.") }
+    var message by remember { mutableStateOf(if (BuildConfig.JAMENDO_CLIENT_ID.isBlank()) "Online catalog is not configured in this build yet. Please install the latest configured Music Pro build." else "Discover independent music selected for online listening.") }
     val scope = rememberCoroutineScope()
 
     fun searchCatalog() {
         val key = clientId.trim()
         if (key.isBlank()) {
-            message = "A Jamendo client ID is required. Create an app in the Jamendo developer portal, then save its client ID here."
+            message = "Online music is not configured in this build yet. You do not need to enter a developer ID; the app publisher configures it once."
             tracks = emptyList()
             return
         }
@@ -135,21 +133,10 @@ fun OnlineCatalogScreen(
                         Text("Jamendo • independent music catalog", color = muted, fontSize = 12.sp)
                     }
                 }
-                Text("Stream catalog tracks while keeping your local library and offline playback. A free developer client ID is needed; Music Pro does not bundle credentials.", color = muted, fontSize = 12.sp)
-                OutlinedTextField(
-                    value = clientId,
-                    onValueChange = { clientId = it.take(200) },
-                    label = { Text("Jamendo client ID") },
-                    placeholder = { Text("Paste your client ID") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedButton(onClick = {
-                        prefs.edit().putString("jamendo_client_id", clientId.trim()).apply()
-                        message = "Client ID saved on this device."
-                    }, modifier = Modifier.weight(1f)) { Text("SAVE ID") }
-                    TextButton(onClick = { message = "Create an app at developer.jamendo.com, then paste its client ID above." }) { Text("HOW TO GET ID") }
+                Text("Discover and stream independent music without entering developer settings. Your local library and offline playback stay available.", color = muted, fontSize = 12.sp)
+                if (clientId.isBlank()) {
+                    Text("ONLINE CATALOG SETUP REQUIRED", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text("The app publisher needs to configure the catalog once. Users should never need to paste a client ID.", color = muted, fontSize = 12.sp)
                 }
                 OutlinedTextField(
                     value = query,
@@ -160,8 +147,8 @@ fun OnlineCatalogScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Button(
-                    onClick = { prefs.edit().putString("jamendo_client_id", clientId.trim()).apply(); searchCatalog() },
-                    enabled = !loading,
+                    onClick = { searchCatalog() },
+                    enabled = !loading && clientId.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = accent)
                 ) {
