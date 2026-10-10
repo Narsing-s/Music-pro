@@ -65,11 +65,11 @@ Music Pro brings your on-device audio into a focused listening experience with a
   <tr>
     <td>
       <h3>🎤 Synchronized lyrics</h3>
-      Import local lyrics and use timed LRC or TTML lyrics where the file format is supported.
+      Import local lyrics and use timed LRC or TTML lyrics where the file format is supported, including standard LRC offset metadata.
     </td>
     <td>
       <h3>📂 Playlist portability</h3>
-      Import and export M3U playlists to move a playlist between compatible music apps.
+      Import and export M3U playlists to move a playlist between compatible music apps. Export filenames preserve Unicode names (including Telugu) while removing filesystem-reserved characters.
     </td>
   </tr>
 </table>
