@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Share
@@ -946,8 +947,10 @@ private fun MusicHome(
                     itemsIndexed(artists, key = { _, artistName -> artistName }) { _, artistName ->
                         val artistSongs = songs.filter { artistName in splitArtists(it.artist.ifBlank { "Unknown artist" }) }
                         Row(Modifier.fillMaxWidth().clickable { artistSongs.firstOrNull()?.let { tab = "NOW PLAYING"; onPlay(songs.indexOf(it)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = CircleShape) {
-                                Box(contentAlignment = Alignment.Center) { Text(artistName.take(1).uppercase(), color = Accent, fontSize = 20.sp, fontWeight = FontWeight.Black) }
+                            Surface(Modifier.size(60.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = CircleShape) {
+                                val art = artworkUris["artist_$artistName"]
+                                if (art != null) AsyncImage(model = art, contentDescription = "$artistName artwork", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(CircleShape))
+                                else Box(contentAlignment = Alignment.Center) { Text(artistName.take(1).uppercase(), color = Accent, fontSize = 20.sp, fontWeight = FontWeight.Black) }
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
@@ -955,6 +958,7 @@ private fun MusicHome(
                                 Text("${artistSongs.size} tracks", color = subtle, fontSize = 12.sp)
                             }
                             Icon(Icons.Default.PlayArrow, contentDescription = "Play artist", tint = Accent)
+                            IconButton(onClick = { artworkTargetKey = "artist_$artistName"; artworkTargetLabel = artistName; artworkPickerLauncher.launch(arrayOf("image/*")) }) { Icon(Icons.Default.Image, contentDescription = "Change artist artwork", tint = subtle) }
                         }
                         HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
                     }
@@ -967,8 +971,10 @@ private fun MusicHome(
                         val albumName = albumEntry.first
                         val albumSongs = albumEntry.second
                         Row(Modifier.fillMaxWidth().clickable { albumSongs.firstOrNull()?.let { tab = "NOW PLAYING"; onPlay(songs.indexOf(it)) } }.padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
-                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Album, contentDescription = null, tint = Accent, modifier = Modifier.size(26.dp)) }
+                            Surface(Modifier.size(60.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
+                                val art = artworkUris["album_$albumName"]
+                                if (art != null) AsyncImage(model = art, contentDescription = "$albumName artwork", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp)))
+                                else Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Album, contentDescription = null, tint = Accent, modifier = Modifier.size(26.dp)) }
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
@@ -976,6 +982,7 @@ private fun MusicHome(
                                 Text("${albumSongs.size} tracks • ${albumSongs.firstOrNull()?.artist ?: "Unknown artist"}", color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
                             Icon(Icons.Default.PlayArrow, contentDescription = "Play album", tint = Accent)
+                            IconButton(onClick = { artworkTargetKey = "album_$albumName"; artworkTargetLabel = albumName; artworkPickerLauncher.launch(arrayOf("image/*")) }) { Icon(Icons.Default.Image, contentDescription = "Change album artwork", tint = subtle) }
                         }
                         HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
                     }
@@ -1173,7 +1180,7 @@ private fun MusicHome(
                                     DropdownMenuItem(text = { Text("Track details") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { detailsSong = song; addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Edit metadata") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { metadataDraftTitle = song.title; metadataDraftArtist = song.artist; metadataDraftAlbum = song.album; editMetadataSong = song; addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text(if (artworkUris.containsKey("track_${song.id}")) "Change artwork" else "Set custom artwork") }, leadingIcon = { Icon(Icons.Default.Album, contentDescription = null) }, onClick = { artworkTargetKey = "track_${song.id}"; artworkTargetLabel = song.title; addToPlaylistSong = null; artworkPickerLauncher.launch(arrayOf("image/*")) })
-                                    if (artworkUris.containsKey(song.id)) DropdownMenuItem(text = { Text("Remove custom artwork") }, onClick = { artworkUris = artworkUris - "track_${song.id}"; context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit().remove("artwork_track_${song.id}").apply(); addToPlaylistSong = null })
+                                    if (artworkUris.containsKey("track_${song.id}")) DropdownMenuItem(text = { Text("Remove custom artwork") }, onClick = { artworkUris = artworkUris - "track_${song.id}"; context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit().remove("artwork_track_${song.id}").apply(); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Share audio") }, leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) }, onClick = { onShare(song); addToPlaylistSong = null })
                                     DropdownMenuItem(text = { Text("Delete from device", color = Color(0xFFE84B35)) }, onClick = { deleteSong = song; addToPlaylistSong = null })
                                     if (playlists.isEmpty()) DropdownMenuItem(text = { Text("Create playlist first") }, onClick = { addToPlaylistSong = null; tab = "PLAYLISTS"; showCreatePlaylist = true })
