@@ -26,7 +26,7 @@ This review compares Music Pro with [MissingCore/Music](https://github.com/Missi
 | Multi-select | Selection state exists in the current screen code. | Audit every bulk action for selection cleanup, cancellation safety, and accurate feedback. |
 | Recent listening | A local recent-track list is persisted (up to 30 IDs). | A richer listening recap/play-count view could be a future optional feature, with clear local-data erase controls. |
 | Android Auto | Media3 media-library service and automotive descriptor are declared. | Verify discoverability and playback in Android Auto / Desktop Head Unit; don't change declarations without evidence of a real gap. |
-| Home-screen widget | A playback widget and receiver are present. | Verify state refresh, multiple widget instances, and behavior after app/process restart. |
+| Home-screen widget | Resizable playback widget and receiver are present. It now exposes previous, play/pause, next, shuffle, and repeat actions, with active shuffle/repeat state reflected in the widget. | Verify on physical launchers, state refresh after process/service recreation, and very narrow widget sizes. |
 
 ## Changes made from this comparison
 
@@ -35,6 +35,7 @@ This review compares Music Pro with [MissingCore/Music](https://github.com/Missi
 - Hardened M3U export filename handling so Unicode playlist names are preserved and reserved filename characters are removed; added unit tests. Existing export flow and UI remain unchanged.
 - Added a dedicated M3U serializer and regression tests so CR/LF characters inside track titles or artists cannot inject fake playlist entries; preserves Unicode and Android media URIs, and clamps negative durations to zero. The existing export UI and workflow remain unchanged.
 - Kept the existing UI and lyric editing flow unchanged. Parsing support still needs real-device validation with actual lyric files.
+- Added Shuffle and Repeat actions to the existing resizable home-screen widget. Widget state is refreshed from Media3 playback state, and active modes are visually highlighted; no new controls were added to other app screens.
 
 ## Recommended next steps
 
