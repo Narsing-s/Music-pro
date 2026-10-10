@@ -308,7 +308,7 @@ private fun MusicHome(
                     lines += "#EXTINF:${(song.durationMs / 1000L).coerceAtLeast(0L)},${song.title} - ${song.artist}"
                     lines += song.uri.toString()
                 }
-                context.contentResolver.openOutputStream(outputUri)?.bufferedWriter()?.use { it.write(lines.joinToString("\\n")) }
+                context.contentResolver.openOutputStream(outputUri)?.bufferedWriter()?.use { it.write(lines.joinToString("\n")) }
                     ?: error("Could not open the selected file")
                 Toast.makeText(context, "Exported ${entries.size} tracks", Toast.LENGTH_SHORT).show()
             }.onFailure { Toast.makeText(context, "Playlist export failed: ${it.message ?: "unknown error"}", Toast.LENGTH_LONG).show() }
