@@ -537,6 +537,30 @@ private fun MusicHome(
                             Text(if (recentTrackIndices.isNotEmpty()) "${recentTrackIndices.size} recently played tracks" else "Resume your current track", color = subtle, fontSize = 11.sp)
                         }
                     }
+                    val favoriteTrackIndices = songs.indices.filter { songs[it].id in favorites }
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            if (favoriteTrackIndices.isNotEmpty()) {
+                                query = ""
+                                tab = "TRACKS"
+                                showFavorites = false
+                                activePlaylist = null
+                                onPlayCollection(favoriteTrackIndices.shuffled(), true)
+                            }
+                        },
+                        enabled = favoriteTrackIndices.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        contentPadding = PaddingValues(vertical = 12.dp)
+                    ) {
+                        Icon(Icons.Default.Favorite, contentDescription = null, tint = Accent)
+                        Spacer(Modifier.width(8.dp))
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Text("FAVORITES MIX", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                            Text(if (favoriteTrackIndices.isNotEmpty()) "${favoriteTrackIndices.size} saved tracks • shuffled for you" else "Save songs with the heart icon to build your mix", color = subtle, fontSize = 11.sp)
+                        }
+                    }
                     Spacer(Modifier.height(14.dp))
                     if (selectedIndex >= 0 && songs.getOrNull(selectedIndex) != null) {
                         val currentSong = songs[selectedIndex]
