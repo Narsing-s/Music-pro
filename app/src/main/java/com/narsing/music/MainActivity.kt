@@ -16,6 +16,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -50,6 +56,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -1111,28 +1118,48 @@ private fun MusicHome(
 @Composable
 private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit) {
     var speedMenuExpanded by remember { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth().weight(1f).padding(top = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(12.dp))
-        Box(Modifier.fillMaxWidth().aspectRatio(1f).padding(12.dp), contentAlignment = Alignment.Center) {
-            Surface(Modifier.fillMaxSize(), color = Color(0xFF202020), shape = CircleShape) {
+    val recordMotion = rememberInfiniteTransition(label = "vinyl-record")
+    val recordRotation = recordMotion.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(animation = tween(durationMillis = 12000, easing = LinearEasing), repeatMode = RepeatMode.Restart),
+        label = "record-rotation"
+    )
+    Column(Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Spacer(Modifier.height(4.dp))
+        Box(
+            Modifier.fillMaxWidth().heightIn(max = 292.dp).aspectRatio(1f).padding(8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                Modifier.fillMaxSize().graphicsLayer { rotationZ = if (playing) recordRotation.value else 0f },
+                color = Color(0xFF202020),
+                shape = CircleShape
+            ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Surface(Modifier.fillMaxSize().padding(18.dp), color = Color(0xFF101010), shape = CircleShape) {
+                    Surface(Modifier.fillMaxSize().padding(12.dp), color = Color(0xFF101010), shape = CircleShape) {
                         Box(contentAlignment = Alignment.Center) {
-                            Surface(Modifier.size(92.dp), color = accentColor, shape = CircleShape) {
-                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = foreground, modifier = Modifier.size(40.dp)) }
+                            Surface(Modifier.fillMaxSize().padding(16.dp), color = Color(0xFF191919), shape = CircleShape) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Surface(Modifier.size(100.dp), color = accentColor, shape = CircleShape) {
+                                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = foreground, modifier = Modifier.size(42.dp)) }
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
-        Spacer(Modifier.height(18.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-            Text(title, color = foreground, fontSize = 24.sp, fontWeight = FontWeight.Black, maxLines = 2)
+        Spacer(Modifier.height(10.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(title, color = foreground, fontSize = 22.sp, fontWeight = FontWeight.Black, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis)
+                Text(artist, color = subtleColor, fontSize = 14.sp, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+                Text(album.uppercase(), color = accentColor, fontSize = 10.sp, letterSpacing = 2.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp))
+            }
             IconButton(onClick = onToggleFavorite) { Icon(if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites", tint = if (isFavorite) accentColor else subtleColor) }
         }
-        Text(artist, color = subtleColor, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
-        Text(album.uppercase(), color = accentColor, fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.padding(top = 10.dp))
         Spacer(Modifier.height(24.dp))
         Slider(
             value = if (durationMs > 0L) (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f) else 0f,
@@ -1166,12 +1193,12 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
             IconButton(onClick = onNext, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipNext, null, tint = foreground, modifier = Modifier.size(34.dp)) }
         }
         Spacer(Modifier.height(18.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, null, tint = if (shuffle) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
-            IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = foreground, modifier = Modifier.size(30.dp)) }
-            IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = foreground, modifier = Modifier.size(30.dp)) }
-            IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = foreground, modifier = Modifier.size(30.dp)) }
-            IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
+        // Previous, play/pause and next already appear in the primary control row above.
+        // Keep only playback modes here to avoid duplicate operations.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, contentDescription = "Shuffle", tint = if (shuffle) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
+            Spacer(Modifier.width(22.dp))
+            IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, contentDescription = "Repeat", tint = if (repeat) accentColor else subtleColor, modifier = Modifier.size(26.dp)) }
         }
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
