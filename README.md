@@ -69,7 +69,7 @@ A mix with no matching songs cannot start playback. Selecting a mix uses the app
 
 Depending on the available device media and app navigation, browse Home, Tracks, Albums, Artists, Playlists, Favorites, Recent, and other library views. Search by track title, artist, or album, and use the available sorting and duration filters.
 
-Tap a track to start playback. Use the mini-player to return to the player while browsing. The track-details dialog has a **Cancel** option that closes the dialog without changing the track.
+Tap a track to start playback. Use the mini-player to return to the player while browsing. The track-details dialog has a **Cancel** option that closes the dialog without changing the track. Share actions use Android's native Sharesheet; review the text before sending it to another app.
 
 ## 🎧 Background playback
 
@@ -88,12 +88,12 @@ Background behavior depends on Android version and manufacturer settings. Test s
 - JDK 17
 - Android SDK 35
 
-### Build a debug APK
+### Build and run unit-test task
 
 ```bash
 git clone https://github.com/Narsing-s/Music-pro.git
 cd Music-pro
-gradle assembleDebug
+gradle testDebugUnitTest assembleDebug
 ```
 
 APK output:
@@ -107,16 +107,17 @@ You can also open the project in Android Studio and run the `app` configuration 
 ## 📦 Download a CI build
 
 1. Open [Android APK workflow runs](https://github.com/Narsing-s/Music-pro/actions/workflows/android-apk.yml).
-2. Choose a completed run with a **successful** status.
-3. In the run's **Artifacts** section, download `narsing-music-debug-apk` if it is available.
+2. Choose a completed run with a **successful** status for the latest commit you want to test.
+3. In the run's **Artifacts** section, download `narsing-music-debug-apk`.
 4. Extract the ZIP and install `app-debug.apk` on your Android device. You may need to allow installation from that source in Android settings.
+5. The artifact includes `app-debug.apk.sha256`. To verify the APK after extraction, run `sha256sum -c app-debug.apk.sha256` on a computer or compatible shell.
 
 > [!NOTE]
-> CI artifacts are debug builds intended for testing, not production-signed releases. Check the workflow result for the specific commit before installing; an older successful run does not confirm that the latest source builds successfully.
+> CI artifacts are debug builds intended for testing, not production-signed releases. Check the workflow result for the specific commit before installing; an older successful run does not confirm that the latest source builds successfully. Debug APKs may not install as an update over a differently signed build.
 
 ## 🔐 Privacy-first approach
 
-The app reads audio metadata from your device's media collection and stores app preferences locally. It does not require an account or upload your music.
+The app reads audio metadata from your device's media collection and stores app preferences locally. It does not require an account or upload your music. Sharing is initiated by the user through Android's Sharesheet; check the share preview before choosing a destination.
 
 ## 🧪 Project status
 
@@ -124,7 +125,12 @@ Narsing Music is under active development. Please validate changes on a physical
 
 ## 🤝 Feedback & contributions
 
-Found a bug or have an idea? [Open an issue](https://github.com/Narsing-s/Music-pro/issues). Include your Android version, device model, steps to reproduce, and relevant build logs so the issue can be investigated more easily.
+- **Bug reports:** [Open a bug report](https://github.com/Narsing-s/Music-pro/issues/new?template=bug_report.yml)
+- **Feature ideas:** [Request a feature](https://github.com/Narsing-s/Music-pro/issues/new?template=feature_request.yml)
+- **Contributing:** Read [CONTRIBUTING.md](https://github.com/Narsing-s/Music-pro/blob/main/CONTRIBUTING.md)
+- **Security:** Read [SECURITY.md](https://github.com/Narsing-s/Music-pro/blob/main/SECURITY.md)
+
+When reporting a bug, include Android version, device model, steps to reproduce, and relevant logs with personal data removed. Do not attach private audio files, credentials, or listening history.
 
 ---
 
