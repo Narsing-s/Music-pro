@@ -3,6 +3,7 @@ package com.narsing.music
 import android.Manifest
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -36,6 +37,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.QueueMusic
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -91,6 +94,7 @@ class MainActivity : ComponentActivity() {
                     onRefresh = { refreshLibrary() },
                     onPlay = { playAt(it) },
                     onPlayNext = { index -> playNext(index) },
+                    onShare = { song -> shareSong(song) },
                     onToggle = { togglePlayback() },
                     onStop = { mediaController?.pause() },
                     onNext = { mediaController?.let { if (it.hasNextMediaItem()) it.seekToNextMediaItem() else if (songs.isNotEmpty()) it.seekTo(0, 0L) } },
@@ -152,6 +156,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun shareSong(song: Song) {
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "audio/*"
+            putExtra(Intent.EXTRA_STREAM, song.uri)
+            putExtra(Intent.EXTRA_SUBJECT, song.title)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        runCatching { startActivity(Intent.createChooser(sendIntent, "Share ${song.title}")) }
+    }
+
     private fun togglePlayback() { mediaController?.let { if (it.isPlaying) it.pause() else it.play() } }
 
     override fun onDestroy() {
@@ -165,7 +179,7 @@ class MainActivity : ComponentActivity() {
 private fun MusicHome(
     songs: List<Song>, selectedIndex: Int, playing: Boolean, title: String, artist: String,
     hasPermission: Boolean, onGrant: () -> Unit, onRefresh: () -> Unit,
-    onPlay: (Int) -> Unit, onPlayNext: (Int) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
+    onPlay: (Int) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
     onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit
 ) {
     var tab by remember { mutableStateOf("HOME") }
@@ -185,6 +199,7 @@ private fun MusicHome(
     var newPlaylistName by remember { mutableStateOf("") }
     var activePlaylist by remember { mutableStateOf<String?>(null) }
     var addToPlaylistSong by remember { mutableStateOf<Song?>(null) }
+    var detailsSong by remember { mutableStateOf<Song?>(null) }
     val context = LocalContext.current
     var preferencesLoaded by remember { mutableStateOf(false) }
 
@@ -484,6 +499,8 @@ private fun MusicHome(
                                 IconButton(onClick = { addToPlaylistSong = song }) { Icon(Icons.Default.Add, contentDescription = "Add to playlist", tint = subtle) }
                                 DropdownMenu(expanded = addToPlaylistSong?.id == song.id, onDismissRequest = { addToPlaylistSong = null }) {
                                     DropdownMenuItem(text = { Text("Play next") }, onClick = { onPlayNext(originalIndex); addToPlaylistSong = null })
+                                    DropdownMenuItem(text = { Text("Track details") }, leadingIcon = { Icon(Icons.Default.Info, contentDescription = null) }, onClick = { detailsSong = song; addToPlaylistSong = null })
+                                    DropdownMenuItem(text = { Text("Share audio") }, leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) }, onClick = { onShare(song); addToPlaylistSong = null })
                                     if (playlists.isEmpty()) DropdownMenuItem(text = { Text("Create playlist first") }, onClick = { addToPlaylistSong = null; tab = "PLAYLISTS"; showCreatePlaylist = true })
                                     playlists.keys.sorted().forEach { name -> DropdownMenuItem(text = { Text(if (song.id in playlists[name].orEmpty()) "✓ $name" else name) }, onClick = { val ids = playlists[name].orEmpty(); playlists = playlists + (name to if (song.id in ids) ids else ids + song.id); addToPlaylistSong = null }) }
                                 }
@@ -512,6 +529,23 @@ private fun MusicHome(
                 }
             }
         }
+    }
+    detailsSong?.let { song ->
+        AlertDialog(
+            onDismissRequest = { detailsSong = null },
+            title = { Text(song.title, maxLines = 2, overflow = TextOverflow.Ellipsis) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("ARTIST", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Text(song.artist.ifBlank { "Unknown artist" })
+                    Text("ALBUM", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Text(song.album.ifBlank { "Unknown album" })
+                    Text("DURATION", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Text(formatDuration(song.durationMs))
+                }
+            },
+            confirmButton = { TextButton(onClick = { detailsSong = null }) { Text("Done") } }
+        )
     }
     if (showCreatePlaylist) AlertDialog(
         onDismissRequest = { showCreatePlaylist = false },
