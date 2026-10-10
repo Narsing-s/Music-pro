@@ -28,7 +28,7 @@ class LyricsParserTest {
             <?xml version="1.0" encoding="UTF-8"?>
             <tt xmlns="http://www.w3.org/ns/ttml"><body><div>
               <p begin="00:00:01.200" end="00:00:02.000">First <span>line</span></p>
-              <p begin="00:00:03.5s">Second line</p>
+              <p begin="3.5s">Second line</p>
             </div></body></tt>
         """.trimIndent()
 
