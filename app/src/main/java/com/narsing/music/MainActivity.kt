@@ -80,6 +80,20 @@ private val Muted = Color(0xFF9B9B95)
 private val Accent = Color(0xFFE84B35)
 
 private data class QueueEntry(val index: Int, val title: String, val artist: String, val isCurrent: Boolean)
+private data class TimedLyric(val timeMs: Long, val text: String)
+private fun parseTimedLyrics(raw: String): List<TimedLyric> {
+    val pattern = Regex("\\[(\\d{1,2}):(\\d{2})(?:\\.(\\d{1,3}))?\\]")
+    return raw.lineSequence().flatMap { line ->
+        val matches = pattern.findAll(line).toList()
+        val lyric = pattern.replace(line, "").trim()
+        if (matches.isEmpty() || lyric.isBlank()) emptySequence() else matches.asSequence().map { match ->
+            val minutes = match.groupValues[1].toLongOrNull() ?: 0L
+            val seconds = match.groupValues[2].toLongOrNull() ?: 0L
+            val fraction = match.groupValues[3].padEnd(3, '0').take(3).toLongOrNull() ?: 0L
+            TimedLyric((minutes * 60L + seconds) * 1000L + fraction, lyric)
+        }
+    }.sortedBy { it.timeMs }.toList()
+}
 
 class MainActivity : ComponentActivity() {
     private var mediaController: MediaController? = null
@@ -288,6 +302,7 @@ private fun MusicHome(
     var metadataDraftAlbum by remember { mutableStateOf("") }
     var lyricsDialogSong by remember { mutableStateOf<Song?>(null) }
     var lyricsDraft by remember { mutableStateOf("") }
+    var selectedTrackIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var deleteSong by remember { mutableStateOf<Song?>(null) }
     val context = LocalContext.current
     var preferencesLoaded by remember { mutableStateOf(false) }
@@ -891,7 +906,7 @@ private fun MusicHome(
             } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true)
+                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", fg, subtle, Accent, onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle; onShuffle(shuffle) }, onRepeat = { repeat = !repeat; onRepeat(repeat) }, shuffle = shuffle, repeat = repeat, positionMs = playbackPosition, durationMs = playbackDuration, onSeek = onSeek, playbackSpeed = playbackSpeed, onSpeedChange = { playbackSpeed = it }, onOpenQueue = { queueEntries = onGetQueue(); showQueueDialog = true }, isFavorite = songs.getOrNull(selectedIndex)?.id in favorites, onToggleFavorite = { songs.getOrNull(selectedIndex)?.let { song -> favorites = if (song.id in favorites) favorites - song.id else favorites + song.id } }, onOpenLyrics = { songs.getOrNull(selectedIndex)?.let { song -> lyricsDraft = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${song.id}", "") ?: ""; lyricsDialogSong = song } }, hasLyrics = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).contains("lyrics_${it.id}") } == true, lyricsText = songs.getOrNull(selectedIndex)?.let { context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).getString("lyrics_${it.id}", "") }.orEmpty())
             } else if (tab == "ARTISTS") {
                 val artists = songs.map { it.artist.ifBlank { "Unknown artist" } }.distinct().sortedBy { it.lowercase() }
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
@@ -1051,6 +1066,12 @@ private fun MusicHome(
                         modifier = Modifier.padding(top = 2.dp, bottom = 8.dp)
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { selectedTrackIds = if (selectedTrackIds.size == sortedFiltered.size) emptySet() else sortedFiltered.map { it.id }.toSet() }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)) { Text(if (selectedTrackIds.size == sortedFiltered.size && sortedFiltered.isNotEmpty()) "DESELECT" else "SELECT", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                        if (selectedTrackIds.isNotEmpty()) {
+                            Text(selectedTrackIds.size.toString(), color = fg, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                            TextButton(onClick = { val ids = sortedFiltered.map { it.id }.filter { it in selectedTrackIds }; val indices = ids.mapNotNull { id -> songs.indexOfFirst { it.id == id }.takeIf { it >= 0 } }; if (indices.isNotEmpty()) onPlayCollection(indices, false); selectedTrackIds = emptySet(); tab = "NOW PLAYING" }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)) { Text("PLAY", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                            TextButton(onClick = { val ids = sortedFiltered.map { it.id }.filter { it in selectedTrackIds }; var name = "Selection " + (System.currentTimeMillis() % 100000); while (name in playlists) name += " 2"; playlists = playlists + (name to ids); activePlaylist = name; selectedTrackIds = emptySet(); tab = "PLAYLISTS" }, contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)) { Text("MAKE PLAYLIST", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                        }
                         if (tab == "RECENT") {
                             TextButton(
                                 onClick = {
@@ -1089,9 +1110,9 @@ private fun MusicHome(
                 LazyColumn(Modifier.weight(1f), contentPadding = PaddingValues(bottom = 12.dp)) {
                     itemsIndexed(sortedFiltered, key = { _, song -> song.id }) { _, song ->
                         val originalIndex = songs.indexOfFirst { it.id == song.id }
-                        Row(Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING"; onPlay(originalIndex) }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Surface(Modifier.size(48.dp), color = Panel, shape = RoundedCornerShape(10.dp)) {
-                                Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, contentDescription = null, tint = if (originalIndex == selectedIndex) Accent else Muted) }
+                        Row(Modifier.fillMaxWidth().clickable { if (selectedTrackIds.isNotEmpty()) selectedTrackIds = if (song.id in selectedTrackIds) selectedTrackIds - song.id else selectedTrackIds + song.id else { tab = "NOW PLAYING"; onPlay(originalIndex) } }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Surface(Modifier.size(48.dp), color = if (song.id in selectedTrackIds) Accent.copy(alpha = 0.22f) else Panel, shape = RoundedCornerShape(10.dp)) {
+                                Box(contentAlignment = Alignment.Center) { if (song.id in selectedTrackIds) Text("✓", color = Accent, fontWeight = FontWeight.Black) else Icon(Icons.Default.MusicNote, contentDescription = null, tint = if (originalIndex == selectedIndex) Accent else Muted) }
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
@@ -1273,7 +1294,7 @@ private fun MusicHome(
 }
 
 @Composable
-private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit, onOpenLyrics: () -> Unit, hasLyrics: Boolean) {
+private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, foreground: Color, subtleColor: Color, accentColor: Color, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit, onOpenLyrics: () -> Unit, hasLyrics: Boolean, lyricsText: String) {
     var speedMenuExpanded by remember { mutableStateOf(false) }
     val recordMotion = rememberInfiniteTransition(label = "vinyl-record")
     val recordRotation = recordMotion.animateFloat(
@@ -1317,6 +1338,14 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
                 TextButton(onClick = onOpenLyrics, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)) { Text(if (hasLyrics) "VIEW / EDIT LYRICS" else "ADD LYRICS", color = accentColor, fontSize = 10.sp, letterSpacing = 1.sp) }
             }
             IconButton(onClick = onToggleFavorite) { Icon(if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder, contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites", tint = if (isFavorite) accentColor else subtleColor) }
+        }
+        val timedLyrics = remember(lyricsText) { parseTimedLyrics(lyricsText) }
+        val activeLyricIndex = timedLyrics.indexOfLast { it.timeMs <= positionMs }
+        if (timedLyrics.isNotEmpty()) {
+            Column(Modifier.fillMaxWidth().heightIn(max = 118.dp).padding(horizontal = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+                timedLyrics.getOrNull(activeLyricIndex)?.let { lyric -> Text(lyric.text, color = accentColor, fontSize = 17.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable { onSeek(lyric.timeMs) }.padding(vertical = 4.dp)) }
+                timedLyrics.getOrNull(activeLyricIndex + 1)?.let { lyric -> Text(lyric.text, color = subtleColor.copy(alpha = 0.8f), fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center, modifier = Modifier.fillMaxWidth().clickable { onSeek(lyric.timeMs) }.padding(vertical = 3.dp)) }
+            }
         }
         Spacer(Modifier.height(24.dp))
         Slider(
