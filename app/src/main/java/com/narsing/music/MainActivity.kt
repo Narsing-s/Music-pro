@@ -18,6 +18,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -134,44 +141,89 @@ private fun MusicHome(
     hasPermission: Boolean, onGrant: () -> Unit, onRefresh: () -> Unit,
     onPlay: (Int) -> Unit, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit
 ) {
-    var tab by remember { mutableStateOf("TRACKS") }
+    var tab by remember { mutableStateOf("HOME") }
     var query by remember { mutableStateOf("") }
+    var theme by remember { mutableStateOf("DARK") }
+    var showFavorites by remember { mutableStateOf(false) }
+    var favorites by remember { mutableStateOf(setOf<Long>()) }
+    var shuffle by remember { mutableStateOf(false) }
+    var repeat by remember { mutableStateOf(false) }
+    val bg = when (theme) { "LIGHT" -> Color(0xFFF4F1E8); "CUSTOM" -> Color(0xFF17111F); else -> Ink }
+    val fg = if (theme == "LIGHT") Ink else Paper
+    val subtle = if (theme == "LIGHT") Color(0xFF69665F) else Muted
     val filtered = songs.filter { it.title.contains(query, true) || it.artist.contains(query, true) || it.album.contains(query, true) }
-    Surface(Modifier.fillMaxSize(), color = Ink) {
+        .filter { !showFavorites || it.id in favorites }
+    Surface(Modifier.fillMaxSize(), color = bg) {
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
             Row(Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("NARSING / AUDIO", color = Accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                    Text("MUSIC", color = Paper, fontSize = 34.sp, fontWeight = FontWeight.Black, letterSpacing = (-1).sp)
+                    Text("MUSIC", color = fg, fontSize = 34.sp, fontWeight = FontWeight.Black, letterSpacing = (-1).sp)
                 }
-                IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, contentDescription = "Rescan music", tint = Paper) }
+                IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, contentDescription = "Rescan music", tint = fg) }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("${songs.size} TRACKS", color = Muted, fontSize = 11.sp, letterSpacing = 1.5.sp)
+                Text("${songs.size} TRACKS", color = subtle, fontSize = 11.sp, letterSpacing = 1.5.sp)
                 Spacer(Modifier.weight(1f))
-                Text("OFFLINE LIBRARY", color = Muted, fontSize = 10.sp, letterSpacing = 1.sp)
+                Text("OFFLINE LIBRARY", color = subtle, fontSize = 10.sp, letterSpacing = 1.sp)
             }
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
                 placeholder = { Text("Search tracks, artists, albums", color = Muted) }, singleLine = true,
                 shape = RoundedCornerShape(14.dp),
-                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = Paper, unfocusedTextColor = Paper, focusedBorderColor = Accent, unfocusedBorderColor = Color.DarkGray, cursorColor = Accent)
+                colors = OutlinedTextFieldDefaults.colors(focusedTextColor = fg, unfocusedTextColor = fg, focusedBorderColor = Accent, unfocusedBorderColor = if (theme == "LIGHT") Color.LightGray else Color.DarkGray, cursorColor = Accent)
             )
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("TRACKS", "NOW PLAYING").forEach { label ->
+                listOf("HOME", "TRACKS", "FAVORITES", "NOW PLAYING").forEach { label ->
                     val active = tab == label
-                    Surface(color = if (active) Paper else Panel, shape = RoundedCornerShape(50), modifier = Modifier.clickable { tab = label }) {
-                        Text(label, color = if (active) Ink else Muted, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Surface(color = if (active) Accent else if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(50), modifier = Modifier.clickable { tab = label; showFavorites = label == "FAVORITES" }) {
+                        Text(label, color = if (active) Color.White else subtle, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                     }
                 }
             }
             Spacer(Modifier.height(12.dp))
-            if (!hasPermission) {
+            if (tab == "HOME" && hasPermission) {
+                Column(Modifier.fillMaxWidth().weight(1f)) {
+                    Text("YOUR SOUNDTRACK", color = fg, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                    Text("Your music, your mood.", color = subtle, fontSize = 13.sp)
+                    Spacer(Modifier.height(14.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        listOf("DARK", "LIGHT", "CUSTOM").forEach { mode ->
+                            FilterChip(selected = theme == mode, onClick = { theme = mode }, label = { Text(mode) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Accent, selectedLabelColor = Color.White))
+                        }
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    Text("RECENT TRACKS", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    if (songs.isEmpty()) {
+                        EmptyState("YOUR LIBRARY IS EMPTY", "Allow audio access and add music to your phone.", "RESCAN LIBRARY", onRefresh)
+                    } else {
+                        LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
+                            itemsIndexed(songs.take(8), key = { _, song -> song.id }) { _, song ->
+                                val ix = songs.indexOfFirst { it.id == song.id }
+                                Row(Modifier.fillMaxWidth().clickable { onPlay(ix) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(Modifier.size(58.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
+                                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Album, null, tint = Accent, modifier = Modifier.size(28.dp)) }
+                                    }
+                                    Spacer(Modifier.width(12.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        Text(song.title, color = fg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(song.artist, color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    }
+                                    IconButton(onClick = { favorites = if (song.id in favorites) favorites - song.id else favorites + song.id }) {
+                                        Icon(if (song.id in favorites) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (song.id in favorites) Accent else subtle)
+                                    }
+                                }
+                                HorizontalDivider(color = if (theme == "LIGHT") Color(0xFFE1DCCF) else Color(0xFF292929))
+                            }
+                        }
+                    }
+                }
+            } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", onToggle, onNext, onPrevious)
+                NowPlaying(title, artist, playing, songs.getOrNull(selectedIndex)?.album ?: "LOCAL COLLECTION", onToggle, onNext, onPrevious, onShuffle = { shuffle = !shuffle }, onRepeat = { repeat = !repeat }, shuffle = shuffle, repeat = repeat)
             } else if (filtered.isEmpty()) {
                 EmptyState("NOTHING IN THE LIBRARY", "Add audio files to your phone, then tap rescan.", "RESCAN LIBRARY", onRefresh)
             } else {
@@ -184,29 +236,30 @@ private fun MusicHome(
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(song.title, color = if (originalIndex == selectedIndex) Accent else Paper, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(song.artist, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(song.title, color = if (originalIndex == selectedIndex) Accent else fg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Text(song.artist, color = subtle, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             }
-                            Text(formatDuration(song.durationMs), color = Muted, fontSize = 11.sp)
+                            IconButton(onClick = { favorites = if (song.id in favorites) favorites - song.id else favorites + song.id }) { Icon(if (song.id in favorites) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (song.id in favorites) Accent else subtle) }
+                            Text(formatDuration(song.durationMs), color = subtle, fontSize = 11.sp)
                         }
                         HorizontalDivider(color = Color(0xFF292929))
                     }
                 }
             }
             if (selectedIndex >= 0 && songs.getOrNull(selectedIndex) != null) {
-                Surface(color = Panel, shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp), modifier = Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING" }) {
+                Surface(color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp), modifier = Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING" }) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Surface(Modifier.size(42.dp), color = Color(0xFF252525), shape = RoundedCornerShape(8.dp)) {
                             Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.MusicNote, null, tint = Accent) }
                         }
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(title, color = Paper, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold)
-                            Text(artist, color = Muted, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(title, color = fg, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.Bold)
+                            Text(artist, color = subtle, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
-                        IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = Paper) }
-                        IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = Paper) }
-                        IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = Paper) }
+                        IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = fg) }
+                        IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = fg) }
+                        IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = fg) }
                     }
                 }
             }
@@ -215,7 +268,7 @@ private fun MusicHome(
 }
 
 @Composable
-private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit) {
+private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boolean, album: String, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean) {
     Column(Modifier.fillMaxWidth().weight(1f).padding(top = 20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(12.dp))
         Box(Modifier.fillMaxWidth().aspectRatio(1f).padding(12.dp), contentAlignment = Alignment.Center) {
@@ -244,6 +297,14 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, playing: Boole
             }
             Spacer(Modifier.width(18.dp))
             IconButton(onClick = onNext, modifier = Modifier.size(58.dp)) { Icon(Icons.Default.SkipNext, null, tint = Paper, modifier = Modifier.size(34.dp)) }
+        }
+        Spacer(Modifier.height(18.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, null, tint = if (shuffle) Accent else Muted, modifier = Modifier.size(26.dp)) }
+            IconButton(onClick = onPrevious) { Icon(Icons.Default.SkipPrevious, null, tint = fg, modifier = Modifier.size(30.dp)) }
+            IconButton(onClick = onToggle) { Icon(if (playing) Icons.Default.Pause else Icons.Default.PlayArrow, null, tint = fg, modifier = Modifier.size(30.dp)) }
+            IconButton(onClick = onNext) { Icon(Icons.Default.SkipNext, null, tint = fg, modifier = Modifier.size(30.dp)) }
+            IconButton(onClick = onRepeat) { Icon(Icons.Default.Repeat, null, tint = if (repeat) Accent else Muted, modifier = Modifier.size(26.dp)) }
         }
         Spacer(Modifier.height(28.dp))
     }
