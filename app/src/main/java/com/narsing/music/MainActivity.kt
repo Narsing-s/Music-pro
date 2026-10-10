@@ -697,7 +697,7 @@ private fun MusicHome(
                                     Text("QUICK MIXES", color = fg, fontWeight = FontWeight.Black, letterSpacing = 1.sp, fontSize = 13.sp)
                                     Text("Pick a mood by track length", color = subtle, fontSize = 11.sp)
                                 }
-                                Icon(Icons.Default.GraphicEq, contentDescription = null, tint = Accent)
+                                Icon(Icons.Default.MusicNote, contentDescription = null, tint = Accent)
                             }
                             Spacer(Modifier.height(10.dp))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
