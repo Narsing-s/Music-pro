@@ -7,6 +7,7 @@ import android.provider.MediaStore
 class MusicRepository(private val context: Context) {
     fun loadSongs(): List<Song> {
         val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+        val metadataPrefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
         val projection = arrayOf(MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.DATE_ADDED)
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
         val songs = mutableListOf<Song>()
@@ -19,7 +20,18 @@ class MusicRepository(private val context: Context) {
             val dateAddedCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(idCol)
-                songs += Song(id, cursor.getString(titleCol)?.takeIf { it.isNotBlank() } ?: "Unknown track", cursor.getString(artistCol)?.takeIf { it.isNotBlank() } ?: "Unknown artist", cursor.getString(albumCol)?.takeIf { it.isNotBlank() } ?: "Unknown album", cursor.getLong(durationCol), ContentUris.withAppendedId(collection, id), cursor.getLong(dateAddedCol))
+                val title = cursor.getString(titleCol)?.takeIf { it.isNotBlank() } ?: "Unknown track"
+                val artist = cursor.getString(artistCol)?.takeIf { it.isNotBlank() } ?: "Unknown artist"
+                val album = cursor.getString(albumCol)?.takeIf { it.isNotBlank() } ?: "Unknown album"
+                songs += Song(
+                    id = id,
+                    title = metadataPrefs.getString("metadata_${id}_title", title) ?: title,
+                    artist = metadataPrefs.getString("metadata_${id}_artist", artist) ?: artist,
+                    album = metadataPrefs.getString("metadata_${id}_album", album) ?: album,
+                    durationMs = cursor.getLong(durationCol),
+                    uri = ContentUris.withAppendedId(collection, id),
+                    dateAddedSeconds = cursor.getLong(dateAddedCol)
+                )
             }
         }
         return songs
