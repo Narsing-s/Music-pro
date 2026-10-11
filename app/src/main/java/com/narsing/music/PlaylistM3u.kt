@@ -11,8 +11,8 @@ data class M3uTrackEntry(
 )
 
 /**
- * Builds portable UTF-8-friendly M3U text without allowing metadata to inject extra lines.
- * Track URIs are preserved as supplied because Android content URIs can be required for playback.
+ * Builds portable UTF-8-friendly M3U text without allowing metadata or URI line breaks to
+ * inject extra playlist entries. Normal Android content URIs are preserved unchanged.
  */
 fun buildM3uPlaylist(tracks: List<M3uTrackEntry>): String = buildList {
     add("#EXTM3U")
