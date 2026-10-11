@@ -222,6 +222,28 @@ fun OnlineCatalogScreen(
             }
         }
 
+        Surface(color = panel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("CLOUD RESULTS • " + cloudSearch, color = foreground, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                AndroidView(
+                    modifier = Modifier.fillMaxWidth().height(390.dp),
+                    factory = { ctx ->
+                        WebView(ctx).apply {
+                            settings.javaScriptEnabled = true
+                            settings.domStorageEnabled = true
+                            settings.mediaPlaybackRequiresUserGesture = true
+                            webViewClient = WebViewClient()
+                            loadUrl("https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8"))
+                        }
+                    },
+                    update = { view ->
+                        val target = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8")
+                        if (view.url != target) view.loadUrl(target)
+                    }
+                )
+            }
+        }
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("INDEPENDENT MUSIC", color = foreground, fontSize = 15.sp, fontWeight = FontWeight.Black)
