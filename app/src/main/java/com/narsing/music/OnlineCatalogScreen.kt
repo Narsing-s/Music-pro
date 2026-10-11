@@ -1,7 +1,5 @@
 package com.narsing.music
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -70,24 +68,19 @@ fun OnlineCatalogScreen(
     val scope = rememberCoroutineScope()
     val movieCategories = remember {
         listOf(
-            MovieMusicCategory("Telugu Movies", "latest Telugu movie songs"),
-            MovieMusicCategory("Hindi / Bollywood", "latest Bollywood Hindi movie songs"),
-            MovieMusicCategory("Tamil Movies", "latest Tamil movie songs"),
-            MovieMusicCategory("Malayalam", "latest Malayalam movie songs"),
-            MovieMusicCategory("Kannada", "latest Kannada movie songs"),
-            MovieMusicCategory("Punjabi", "latest Punjabi movie songs"),
-            MovieMusicCategory("Devotional", "popular Indian devotional songs bhajans"),
-            MovieMusicCategory("Telugu Devotional", "popular Telugu devotional songs"),
-            MovieMusicCategory("Hindi Bhajans", "popular Hindi bhajans devotional songs"),
-            MovieMusicCategory("Tamil Devotional", "popular Tamil devotional songs"),
-            MovieMusicCategory("Islamic", "popular Islamic devotional nasheed"),
-            MovieMusicCategory("Christian", "Christian devotional worship songs")
+            MovieMusicCategory("Telugu Movies", "Telugu"),
+            MovieMusicCategory("Hindi / Bollywood", "Bollywood Hindi"),
+            MovieMusicCategory("Tamil Movies", "Tamil"),
+            MovieMusicCategory("Malayalam", "Malayalam"),
+            MovieMusicCategory("Kannada", "Kannada"),
+            MovieMusicCategory("Punjabi", "Punjabi"),
+            MovieMusicCategory("Devotional", "devotional bhajan"),
+            MovieMusicCategory("Telugu Devotional", "Telugu devotional"),
+            MovieMusicCategory("Hindi Bhajans", "Hindi bhajan"),
+            MovieMusicCategory("Tamil Devotional", "Tamil devotional"),
+            MovieMusicCategory("Islamic", "Islamic nasheed"),
+            MovieMusicCategory("Christian", "Christian worship")
         )
-    }
-
-    fun openMovieMusic(search: String) {
-        cloudSearch = search
-        message = "Cloud panel results: " + search
     }
 
     fun loadCatalog(search: String, append: Boolean = false) {
@@ -252,7 +245,7 @@ fun OnlineCatalogScreen(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                val categories = listOf(MovieMusicCategory("For You", "popular Indian music")) + movieCategories
+                val categories = listOf(MovieMusicCategory("For You", "Indian")) + movieCategories
                 categories.forEach { category ->
                     val selected = selectedCategory == category.label
                     Surface(
@@ -389,7 +382,7 @@ fun OnlineCatalogScreen(
                         if (clientId.isBlank())
                             "Playable online tracks appear after the publisher configures the catalogue."
                         else
-                            "Choose a category or search above to find tracks you can play directly in Music Pro.",
+                            "Searches use an independent-music catalogue. Popular Telugu movie songs may not be available from this provider.",
                         color = muted,
                         fontSize = 12.sp
                     )
