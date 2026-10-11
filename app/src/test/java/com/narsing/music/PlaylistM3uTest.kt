@@ -31,6 +31,16 @@ class PlaylistM3uTest {
     }
 
     @Test
+    fun uriNewlinesCannotInjectAdditionalPlaylistEntries() {
+        val result = buildM3uPlaylist(
+            listOf(M3uTrackEntry("Song", "Artist", 1_000L, "content://media/audio/1\\n#EXTM3U\\ncontent://injected"))
+        )
+
+        assertEquals(3, result.lines().size)
+        assertTrue(result.endsWith("content://media/audio/1#EXTM3Ucontent://injected"))
+    }
+
+    @Test
     fun preservesUnicodeAndHandlesEmptyOrNegativeValues() {
         assertEquals("#EXTM3U", buildM3uPlaylist(emptyList()))
         val result = buildM3uPlaylist(listOf(M3uTrackEntry("తెలుగు పాట", "కళాకారుడు", -1L, "content://audio/1")))
