@@ -2,9 +2,6 @@ package com.narsing.music
 
 import android.content.Intent
 import android.net.Uri
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -15,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -68,7 +64,8 @@ fun OnlineCatalogScreen(
     var loadingMore by remember { mutableStateOf(false) }
     var offset by remember { mutableIntStateOf(0) }
     var canLoadMore by remember { mutableStateOf(false) }
-    var cloudSearch by remember { mutableStateOf("popular Indian movie songs devotional music") }
+    var cloudSearch by remember { mutableStateOf("popular Indian music") }
+    var selectedCategory by remember { mutableStateOf("For You") }
     var message by remember { mutableStateOf(if (clientId.isBlank()) "Online catalogue setup is required for independent music." else "Loading music for you…") }
     val scope = rememberCoroutineScope()
     val movieCategories = remember {
@@ -172,157 +169,238 @@ fun OnlineCatalogScreen(
 
     LaunchedEffect(clientId) { if (clientId.isNotBlank()) loadCatalog("") }
 
-    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Surface(color = panel, shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Compact discovery header: one clear search surface instead of stacked panels.
+        Surface(
+            color = panel,
+            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(color = accent.copy(alpha = 0.16f), shape = RoundedCornerShape(13.dp)) {
-                        Icon(Icons.Default.Cloud, contentDescription = null, tint = accent, modifier = Modifier.padding(10.dp).size(24.dp))
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text("Discover", color = foreground, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+                        Text("Music for every mood.", color = muted, fontSize = 13.sp)
                     }
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("YOUR MUSIC UNIVERSE", color = foreground, fontSize = 18.sp, fontWeight = FontWeight.Black)
-                        Text("Discover • play • keep exploring", color = muted, fontSize = 12.sp)
+                    Surface(
+                        color = accent.copy(alpha = 0.14f),
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        Icon(
+                            Icons.Default.Cloud,
+                            contentDescription = "Online music",
+                            tint = accent,
+                            modifier = Modifier.padding(11.dp).size(23.dp)
+                        )
                     }
-                    IconButton(onClick = { loadCatalog(query) }, enabled = !loading && clientId.isNotBlank()) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh online tracks", tint = accent)
+                    IconButton(
+                        onClick = { loadCatalog(query.ifBlank { cloudSearch }) },
+                        enabled = !loading && clientId.isNotBlank()
+                    ) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh catalogue", tint = muted)
                     }
                 }
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it.take(100) },
-                    label = { Text("Search cloud music") },
-                    placeholder = { Text("Movie songs, devotional, singer, film…") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Songs, artists, moods…") },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = muted) },
                     trailingIcon = {
-                        IconButton(onClick = { openMovieMusic(query.ifBlank { "popular Indian movie songs devotional music" }); if (clientId.isNotBlank()) loadCatalog(query) }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search cloud music", tint = accent)
-                        }
-                    }
-                )
-                Text(message, color = muted, fontSize = 12.sp)
-                if (clientId.isBlank()) {
-                    Text("ONLINE CATALOG SETUP REQUIRED", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Text("The app publisher must configure JAMENDO_CLIENT_ID in GitHub Actions and rebuild. Users never need to enter a developer ID.", color = muted, fontSize = 12.sp)
-                }
-            }
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("MOVIE & DEVOTIONAL CLOUD", color = foreground, fontSize = 15.sp, fontWeight = FontWeight.Black)
-            Text("Browse movie songs, devotional music, bhajans and regional releases inside this cloud panel.", color = muted, fontSize = 11.sp)
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                movieCategories.forEach { category ->
-                    Surface(
-                        color = panel,
-                        shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.clickable {
-                            query = category.search
-                            openMovieMusic(category.search)
-                            if (clientId.isNotBlank()) loadCatalog(category.search)
-                        }
-                    ) {
-                        Row(Modifier.padding(horizontal = 13.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(category.label, color = foreground, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.width(5.dp))
-                            Icon(Icons.Default.Search, contentDescription = "Search ${category.label}", tint = accent, modifier = Modifier.size(14.dp))
-                        }
-                    }
-                }
-            }
-        }
-
-        Surface(color = panel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("CLOUD RESULTS • " + cloudSearch, color = foreground, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                AndroidView(
-                    modifier = Modifier.fillMaxWidth().height(270.dp),
-                    factory = { ctx ->
-                        WebView(ctx).apply {
-                            settings.javaScriptEnabled = true
-                            settings.domStorageEnabled = true
-                            settings.mediaPlaybackRequiresUserGesture = true
-                            webViewClient = WebViewClient()
-                            val target = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8")
-                            setTag(target)
-                            loadUrl(target)
+                        if (query.isNotBlank()) {
+                            IconButton(onClick = {
+                                cloudSearch = query.trim()
+                                selectedCategory = "Search"
+                                loadCatalog(query.trim())
+                            }) {
+                                Icon(Icons.Default.PlayArrow, contentDescription = "Search and play results", tint = accent)
+                            }
                         }
                     },
-                    update = { view ->
-                        val target = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8")
-                        if (view.getTag() != target) {
-                            view.setTag(target)
-                            view.loadUrl(target)
-                        }
-                    }
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = accent,
+                        unfocusedBorderColor = muted.copy(alpha = 0.25f),
+                        focusedLabelColor = accent,
+                        cursorColor = accent
+                    )
                 )
+                Text(
+                    if (clientId.isBlank()) "Online catalogue needs publisher setup" else message,
+                    color = muted,
+                    fontSize = 11.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (clientId.isBlank()) {
+                    Text(
+                        "Set JAMENDO_CLIENT_ID in GitHub Actions and rebuild to enable playable independent tracks.",
+                        color = muted,
+                        fontSize = 11.sp
+                    )
+                }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Browse", color = foreground, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val categories = listOf(MovieMusicCategory("For You", "popular Indian music")) + movieCategories
+                categories.forEach { category ->
+                    val selected = selectedCategory == category.label
+                    Surface(
+                        color = if (selected) accent else panel,
+                        contentColor = if (selected) Color.Black else foreground,
+                        shape = RoundedCornerShape(50),
+                        modifier = Modifier.clickable {
+                            selectedCategory = category.label
+                            cloudSearch = category.search
+                            query = category.search
+                            loadCatalog(category.search)
+                        }
+                    ) {
+                        Text(
+                            category.label,
+                            modifier = Modifier.padding(horizontal = 15.dp, vertical = 10.dp),
+                            fontSize = 12.sp,
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                            maxLines = 1
+                        )
+                    }
+                }
             }
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("INDEPENDENT MUSIC", color = foreground, fontSize = 15.sp, fontWeight = FontWeight.Black)
-                Text("Jamendo catalogue • licensed provider streams", color = muted, fontSize = 11.sp)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    when (selectedCategory) {
+                        "For You" -> "Made for discovery"
+                        "Search" -> "Search results"
+                        else -> selectedCategory
+                    },
+                    color = foreground,
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    if (tracks.isNotEmpty()) "${tracks.size} playable tracks" else "Independent music catalogue",
+                    color = muted,
+                    fontSize = 12.sp
+                )
             }
-            Text("${tracks.size} tracks", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            if (loading) CircularProgressIndicator(Modifier.size(20.dp), color = accent, strokeWidth = 2.dp)
         }
-        if (loading && tracks.isEmpty()) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    CircularProgressIndicator(color = accent)
-                    Text("Loading music for you…", color = muted, fontSize = 12.sp)
-                }
-            }
-        } else if (tracks.isNotEmpty()) {
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp), contentPadding = PaddingValues(bottom = 12.dp)) {
+
+        if (tracks.isNotEmpty()) {
+            LazyColumn(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                contentPadding = PaddingValues(bottom = 12.dp)
+            ) {
                 items(tracks, key = { it.id }) { track ->
-                    Surface(color = panel, shape = RoundedCornerShape(15.dp), modifier = Modifier.fillMaxWidth()) {
-                        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                            AsyncImage(
-                                model = track.artworkUrl.takeIf { it.startsWith("https://") || it.startsWith("http://") },
-                                contentDescription = "${track.title} artwork",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.size(58.dp).clip(RoundedCornerShape(11.dp)).background(Color(0xFF292929))
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                            .clickable { onPlayOnline(track.streamUrl, track.title, track.artist, track.artworkUrl) }
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = track.artworkUrl.takeIf { it.startsWith("https://") || it.startsWith("http://") },
+                            contentDescription = "${track.title} artwork",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.size(56.dp).clip(RoundedCornerShape(10.dp))
+                                .background(panel)
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                track.title,
+                                color = foreground,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
-                            Spacer(Modifier.width(11.dp))
-                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                Text(track.title, color = foreground, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(track.artist, color = muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text("Independent release • check license before reuse", color = muted, fontSize = 10.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                                TextButton(onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(track.licenseUrl))) } }, contentPadding = PaddingValues(0.dp)) {
-                                    Text("VIEW LICENSE", color = accent, fontSize = 10.sp)
-                                }
-                            }
-                            IconButton(onClick = { onPlayOnline(track.streamUrl, track.title, track.artist, track.artworkUrl) }) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = "Play ${track.title}", tint = accent, modifier = Modifier.size(30.dp))
-                            }
+                            Text(
+                                track.artist,
+                                color = muted,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        IconButton(onClick = {
+                            onPlayOnline(track.streamUrl, track.title, track.artist, track.artworkUrl)
+                        }) {
+                            Icon(Icons.Default.PlayArrow, contentDescription = "Play ${track.title}", tint = accent)
                         }
                     }
                 }
                 if (canLoadMore) {
                     item {
                         OutlinedButton(
-                            onClick = { loadCatalog(query, append = true) },
+                            onClick = { loadCatalog(query.ifBlank { cloudSearch }, append = true) },
                             enabled = !loadingMore,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             if (loadingMore) CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
                             else Icon(Icons.Default.Refresh, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text(if (loadingMore) "LOADING MORE…" else "LOAD MORE TRACKS")
+                            Text(if (loadingMore) "Loading more…" else "Load more tracks")
                         }
                     }
                 }
             }
         } else {
-            Column(Modifier.weight(1f).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Icon(Icons.Default.Cloud, contentDescription = null, tint = accent, modifier = Modifier.size(40.dp))
-                Spacer(Modifier.height(10.dp))
-                Text(if (clientId.isBlank()) "ONLINE CATALOG NOT CONFIGURED" else "NO TRACKS YET", color = foreground, fontWeight = FontWeight.Bold)
-                Text("Movie and devotional results load inside the cloud panel. Independent audio streaming needs a configured Jamendo catalogue.", color = muted, fontSize = 12.sp)
-                if (clientId.isNotBlank()) {
-                    Button(onClick = { loadCatalog(query) }, colors = ButtonDefaults.buttonColors(containerColor = accent)) { Text("RETRY") }
+            Surface(
+                color = panel,
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth().weight(1f)
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Surface(
+                        color = accent.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        Icon(Icons.Default.Cloud, contentDescription = null, tint = accent,
+                            modifier = Modifier.padding(16.dp).size(30.dp))
+                    }
+                    Spacer(Modifier.height(14.dp))
+                    Text(
+                        if (clientId.isBlank()) "Catalogue setup needed" else if (loading) "Finding your next track…" else "Ready when you are",
+                        color = foreground,
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        if (clientId.isBlank())
+                            "Playable online tracks appear after the publisher configures the catalogue."
+                        else
+                            "Choose a category or search above to find tracks you can play directly in Music Pro.",
+                        color = muted,
+                        fontSize = 12.sp
+                    )
+                    if (clientId.isNotBlank() && !loading) {
+                        Spacer(Modifier.height(12.dp))
+                        Button(
+                            onClick = { loadCatalog(query.ifBlank { cloudSearch }) },
+                            colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Color.Black),
+                            shape = RoundedCornerShape(50)
+                        ) { Text("Try again") }
+                    }
                 }
             }
         }
