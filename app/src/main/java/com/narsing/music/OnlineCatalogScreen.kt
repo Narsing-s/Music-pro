@@ -245,14 +245,14 @@ fun OnlineCatalogScreen(
                             settings.mediaPlaybackRequiresUserGesture = true
                             webViewClient = WebViewClient()
                             val target = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8")
-                            setTag(R.id.online_cloud_search_url, target)
+                            setTag(target)
                             loadUrl(target)
                         }
                     },
                     update = { view ->
                         val target = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8")
-                        if (view.getTag(R.id.online_cloud_search_url) != target) {
-                            view.setTag(R.id.online_cloud_search_url, target)
+                        if (view.getTag() != target) {
+                            view.setTag(target)
                             view.loadUrl(target)
                         }
                     }
