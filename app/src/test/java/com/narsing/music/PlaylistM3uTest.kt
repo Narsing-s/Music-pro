@@ -33,7 +33,7 @@ class PlaylistM3uTest {
     @Test
     fun uriNewlinesCannotInjectAdditionalPlaylistEntries() {
         val result = buildM3uPlaylist(
-            listOf(M3uTrackEntry("Song", "Artist", 1_000L, "content://media/audio/1\\n#EXTM3U\\ncontent://injected"))
+            listOf(M3uTrackEntry("Song", "Artist", 1_000L, "content://media/audio/1\n#EXTM3U\ncontent://injected"))
         )
 
         assertEquals(3, result.lines().size)
