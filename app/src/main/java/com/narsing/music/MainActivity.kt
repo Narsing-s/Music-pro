@@ -1007,7 +1007,7 @@ private fun MusicHome(
                         }
                     }
                 }
-            } else if (!hasPermission && true) {
+            } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
                 NowPlaying(title, artist, songs.getOrNull(selectedIndex)?.album ?: "ONLINE CATALOG", playing, fg, subtle, Accent, artworkUris["track_${songs.getOrNull(selectedIndex)?.id}"], { tab = "HOME" }, { songs.getOrNull(selectedIndex)?.let { artworkTargetKey = "track_${it.id}"; artworkTargetLabel = it.title; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onShareTrack = {
