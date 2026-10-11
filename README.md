@@ -74,21 +74,22 @@ Music Pro brings your on-device audio into a focused listening experience with a
   </tr>
 </table>
 
-## 🌐 Online music + offline library
+## 🌐 Online discovery + offline library
 
-Music Pro now opens directly into a discovery-first **Online** screen. The cloud panel embeds YouTube search results inside the app for Telugu, Hindi/Bollywood, Tamil, Malayalam, Kannada, Punjabi, devotional, bhajan, Islamic, and Christian music searches—so tapping a category updates the in-app cloud panel instead of sending users to an external browser. The independent Jamendo audio catalogue remains separate and supports search and pagination. The existing local library and offline playback remain available under Home and the other library tabs.
+Music Pro includes a native discovery screen with regional search categories, track artwork, artist names, and in-app playback for audio tracks returned by the configured Jamendo catalogue. Search terms are intentionally short (for example, **Telugu**, **Telugu devotional**, **Tamil**, or **Hindi bhajan**) to improve matching against track metadata. The local library and offline playback remain available under Home and the other library tabs.
 
-### One-time publisher setup (not required from app users)
+### One-time publisher setup
 
 1. Create an application in the [Jamendo developer portal](https://developer.jamendo.com/) and obtain a client ID.
 2. Open this repository's **Settings → Secrets and variables → Actions → New repository secret**.
 3. Add the secret named `JAMENDO_CLIENT_ID` with the publisher's client ID.
 4. Run the **Android APK** workflow again and install that new APK.
-5. Users can open Music Pro and see the discovery screen immediately, search and play available Jamendo tracks, and load more results. They never need to paste a developer ID or open developer settings.
 
-The ID is injected at build time. It is an application identifier, not a password. If the secret is absent, the app shows a clear publisher-configuration message rather than prompting every user for credentials. Online availability depends on Jamendo's API, internet access, and the app configuration. Check each track's license and attribution terms before reuse or redistribution.
+The ID is injected at build time. If the secret is absent, the app shows a publisher-configuration message. Online availability depends on Jamendo's API, internet access, and the app configuration.
 
-This is a Spotify-inspired interface, not Spotify's licensed catalogue. Movie and devotional search results are displayed through YouTube's embedded web experience inside the cloud panel; video playback remains subject to YouTube availability, ads, embedding restrictions, and regional rules. The app does not extract or directly stream copyrighted film audio. Jamendo results are independent music, not a substitute for Bollywood or regional film-song licensing. Online tracks are not automatically available offline; local files and existing local playlists remain available without internet.
+**Important catalogue limitation:** Jamendo is an independent-music catalogue; it does not provide a guaranteed collection of popular Telugu cinema tracks, Telugu chart hits, or mainstream Bollywood/Tamil movie songs. Category names are search filters, not promises that those songs exist in the provider. This change improves regional search matching but cannot add missing licensed recordings. To stream mainstream film songs directly inside Music Pro, a provider must offer an authorized playback API/SDK and the app must follow its licensing, authentication, and playback rules. Music Pro does not scrape copyrighted audio or route users to YouTube as a substitute for direct audio playback.
+
+Online tracks are not automatically available offline; local files and existing local playlists remain available without internet.
 
 ## 🏠 Home, without the clutter
 
