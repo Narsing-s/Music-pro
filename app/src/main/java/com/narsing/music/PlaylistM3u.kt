@@ -21,6 +21,7 @@ fun buildM3uPlaylist(tracks: List<M3uTrackEntry>): String = buildList {
         val title = track.title.replace(Regex("[\\r\\n]+"), " ").trim()
         val artist = track.artist.replace(Regex("[\\r\\n]+"), " ").trim()
         add("#EXTINF:$durationSeconds,$title - $artist")
-        add(track.uri)
+        // A URI is expected to occupy exactly one M3U line; strip line breaks to prevent entry injection.
+        add(track.uri.replace(Regex("[\\r\\n]+"), "").trim())
     }
 }.joinToString("\n")
