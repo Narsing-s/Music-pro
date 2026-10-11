@@ -10,10 +10,17 @@ android {
         applicationId = "com.narsing.music"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.1.0"
+        versionCode = 8
+        versionName = "0.1.1"
+        val jamendoClientId = providers.gradleProperty("JAMENDO_CLIENT_ID")
+            .orElse(providers.environmentVariable("JAMENDO_CLIENT_ID"))
+            .getOrElse("")
+        buildConfigField("String", "JAMENDO_CLIENT_ID", "\"$jamendoClientId\"")
     }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
