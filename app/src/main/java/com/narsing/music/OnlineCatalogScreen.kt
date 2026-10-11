@@ -16,10 +16,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.OpenInNew
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -212,7 +210,7 @@ fun OnlineCatalogScreen(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("MOVIE MUSIC", color = foreground, fontSize = 15.sp, fontWeight = FontWeight.Black)
+            Text("MOVIE & DEVOTIONAL CLOUD", color = foreground, fontSize = 15.sp, fontWeight = FontWeight.Black)
             Text("Browse movie songs, devotional music, bhajans and regional releases inside this cloud panel.", color = muted, fontSize = 11.sp)
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 movieCategories.forEach { category ->
@@ -224,7 +222,7 @@ fun OnlineCatalogScreen(
                         Row(Modifier.padding(horizontal = 13.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(category.label, color = foreground, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.width(5.dp))
-                            Icon(Icons.Default.OpenInNew, contentDescription = "Open ${category.label} movie music", tint = accent, modifier = Modifier.size(14.dp))
+                            Icon(Icons.Default.Search, contentDescription = "Search ${category.label}", tint = accent, modifier = Modifier.size(14.dp))
                         }
                     }
                 }
@@ -235,7 +233,7 @@ fun OnlineCatalogScreen(
             Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text("CLOUD RESULTS • " + cloudSearch, color = foreground, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 AndroidView(
-                    modifier = Modifier.fillMaxWidth().height(390.dp),
+                    modifier = Modifier.fillMaxWidth().height(270.dp),
                     factory = { ctx ->
                         WebView(ctx).apply {
                             settings.javaScriptEnabled = true
