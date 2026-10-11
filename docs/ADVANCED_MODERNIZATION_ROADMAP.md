@@ -49,7 +49,7 @@ These should be implemented only after a feature-specific design and test plan e
 
 Before publishing a release:
 
-- [ ] Run `./gradlew testDebugUnitTest assembleDebug` (or the equivalent Gradle command used by CI).
+- [ ] Run unit tests, Android lint, and the debug APK build (`gradle testDebugUnitTest lintDebug assembleDebug` in CI); review the generated lint report.
 - [ ] Install the APK on a physical Android device and launch it from a clean install.
 - [ ] Test local Telugu songs, devotional tracks, and files with missing or unusual metadata.
 - [ ] Test playback while the screen is off and control it from the notification and lock screen.
@@ -70,4 +70,4 @@ Before publishing a release:
 
 ## Status
 
-This document is a prioritized engineering plan, not a claim that every listed improvement has been implemented. Mark items complete only after code review, automated tests, and the relevant device checks.
+The CI workflow now runs unit tests, Android lint, and the debug APK build, and uploads the lint HTML report when generated. This document remains a prioritized engineering plan, not a claim that every listed improvement has been implemented. Mark items complete only after code review, automated tests, and the relevant device checks.
