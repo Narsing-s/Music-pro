@@ -76,7 +76,7 @@ Music Pro brings your on-device audio into a focused listening experience with a
 
 ## 🌐 Online music + offline library
 
-Music Pro now opens directly into a discovery-first **Online** screen. The cloud panel embeds YouTube search results inside the app for Telugu, Hindi/Bollywood, Tamil, Malayalam, Kannada, Punjabi, devotional, bhajan, Islamic, and Christian music searches—so tapping a category updates the in-app cloud panel instead of sending users to an external browser. The independent Jamendo audio catalogue remains separate and supports search and pagination. The existing local library and offline playback remain available under Home and the other library tabs.
+Music Pro opens into a discovery-first **Online** screen with native category chips for Telugu, Hindi/Bollywood, Tamil, Malayalam, Kannada, Punjabi, devotional, bhajan, Islamic, and Christian searches. Selecting a category searches the configured audio catalogue and lists tracks that can be played directly through Music Pro’s player; no YouTube page is embedded. Jamendo is an independent-music catalogue and supports search and pagination. It does not contain a guaranteed complete catalogue of commercial movie soundtracks. Film and devotional tracks appear only when the selected licensed provider makes them available. The existing local library and offline playback remain available under Home and the other library tabs.
 
 ### One-time publisher setup (not required from app users)
 
@@ -88,7 +88,7 @@ Music Pro now opens directly into a discovery-first **Online** screen. The cloud
 
 The ID is injected at build time. It is an application identifier, not a password. If the secret is absent, the app shows a clear publisher-configuration message rather than prompting every user for credentials. Online availability depends on Jamendo's API, internet access, and the app configuration. Check each track's license and attribution terms before reuse or redistribution.
 
-This is a Spotify-inspired interface, not Spotify's licensed catalogue. Movie and devotional search results are displayed through YouTube's embedded web experience inside the cloud panel; video playback remains subject to YouTube availability, ads, embedding restrictions, and regional rules. The app does not extract or directly stream copyrighted film audio. Jamendo results are independent music, not a substitute for Bollywood or regional film-song licensing. Online tracks are not automatically available offline; local files and existing local playlists remain available without internet.
+This is a Spotify-inspired interface, not Spotify's licensed catalogue. The app does not embed or route users to YouTube for music discovery. Direct online playback is available only for tracks returned by the configured audio provider. Jamendo results are independent music, not a substitute for Bollywood or regional film-song licensing. To offer a complete commercial movie-song catalogue, the app needs a provider that grants streaming rights for those recordings. Online tracks are not automatically available offline; local files and existing local playlists remain available without internet.
 
 ## 🏠 Home, without the clutter
 
