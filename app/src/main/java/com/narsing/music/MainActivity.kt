@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.content.pm.PackageManager
 import android.app.Activity
 import android.provider.MediaStore
@@ -38,7 +37,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -73,9 +71,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLEncoder
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
@@ -149,7 +144,6 @@ class MainActivity : ComponentActivity() {
                     onGrant = { permissionLauncher.launch(permission) },
                     onRefresh = { refreshLibrary() },
                     onPlay = { playAt(it) },
-                    onPlayOnline = { url, trackTitle, trackArtist, artwork -> playOnline(url, trackTitle, trackArtist, artwork) },
                     onPlayCollection = { indices, shuffled -> playCollection(indices, shuffled) },
                     onPlayNext = { index -> playNext(index) },
                     onShare = { song -> shareSong(song) },
@@ -203,18 +197,6 @@ class MainActivity : ComponentActivity() {
                 }
             }, mainExecutor)
         }
-    }
-
-    private fun playOnline(url: String, title: String, artist: String, artwork: String) {
-        val stream = url.takeIf { it.startsWith("https://") || it.startsWith("http://") } ?: return
-        val metadata = MediaMetadata.Builder().setTitle(title).setArtist(artist).setAlbumTitle("Online catalog")
-            .setArtworkUri(artwork.takeIf { it.startsWith("https://") || it.startsWith("http://") }?.let { Uri.parse(it) }).build()
-        val item = MediaItem.Builder().setUri(stream).setMediaMetadata(metadata).build()
-        mediaController?.apply { setMediaItem(item); prepare(); play() }
-        selectedIndex = -1
-        currentTitle = title
-        currentArtist = artist
-        isPlaying = true
     }
 
     private fun playAt(index: Int) {
@@ -314,12 +296,12 @@ class MainActivity : ComponentActivity() {
 private fun MusicHome(
     songs: List<Song>, selectedIndex: Int, playing: Boolean, title: String, artist: String,
     hasPermission: Boolean, onFontChoiceChange: (String) -> Unit, onGrant: () -> Unit, onRefresh: () -> Unit,
-    onPlay: (Int) -> Unit, onPlayOnline: (String, String, String, String) -> Unit, onPlayCollection: (List<Int>, Boolean) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
+    onPlay: (Int) -> Unit, onPlayCollection: (List<Int>, Boolean) -> Unit, onPlayNext: (Int) -> Unit, onShare: (Song) -> Unit, onToggle: () -> Unit, onStop: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit,
     onShuffle: (Boolean) -> Unit, onRepeat: (Boolean) -> Unit,
     onProgress: () -> Pair<Long, Long>, onSeek: (Long) -> Unit, onSpeed: (Float) -> Unit,
     onDelete: (Song) -> Unit, onGetQueue: () -> List<QueueEntry>, onPlayQueueItem: (Int) -> Unit, onRemoveQueueItem: (Int) -> Unit, onMoveQueueItem: (Int, Int) -> Unit
 ) {
-    var tab by remember { mutableStateOf("ONLINE") }
+    var tab by remember { mutableStateOf("HOME") }
     var query by remember { mutableStateOf("") }
     var durationFilter by remember { mutableStateOf("ALL") }
     var theme by remember { mutableStateOf("DARK") }
@@ -1025,7 +1007,7 @@ private fun MusicHome(
                         }
                     }
                 }
-            } else if (!hasPermission && tab != "ONLINE") {
+            } else if (!hasPermission && true) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
                 NowPlaying(title, artist, songs.getOrNull(selectedIndex)?.album ?: "ONLINE CATALOG", playing, fg, subtle, Accent, artworkUris["track_${songs.getOrNull(selectedIndex)?.id}"], { tab = "HOME" }, { songs.getOrNull(selectedIndex)?.let { artworkTargetKey = "track_${it.id}"; artworkTargetLabel = it.title; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onShareTrack = {
@@ -1374,10 +1356,6 @@ private fun MusicHome(
                         }
                     }
                 }
-            } else if (tab == "ONLINE") {
-                Box(Modifier.weight(1f)) {
-                    OnlineCatalogScreen(foreground = fg, muted = subtle, accent = Accent, panel = Panel, onPlayOnline = { url, trackTitle, trackArtist, artwork -> onPlayOnline(url, trackTitle, trackArtist, artwork); tab = "NOW PLAYING" })
-                }
             } else if (filtered.isEmpty()) {
                 if (query.isNotBlank() && songs.isNotEmpty()) {
                     EmptyState(
@@ -1497,7 +1475,7 @@ private fun MusicHome(
                 Spacer(Modifier.height(4.dp))
                 Surface(color = if (theme == "LIGHT") Color(0xFFF4F1E8) else Color(0xFF111111), shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp), modifier = Modifier.fillMaxWidth()) {
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 2.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
-                        listOf("HOME", "ONLINE", "TRACKS", "ALBUMS", "PLAYLISTS", "ARTISTS", "GENRES", "FOLDERS", "RECENT", "FAVORITES", "INSIGHTS").forEach { label ->
+                        listOf("HOME", "TRACKS", "ALBUMS", "PLAYLISTS", "ARTISTS", "GENRES", "FOLDERS", "RECENT", "FAVORITES", "INSIGHTS").forEach { label ->
                             val active = tab == label
                             Surface(color = if (active) Accent else Color.Transparent, shape = RoundedCornerShape(11.dp), modifier = Modifier.clickable {
                                 tab = label
@@ -1506,7 +1484,7 @@ private fun MusicHome(
                                 if (label == "TRACKS") query = ""
                             }) {
                                 Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Icon(when (label) { "HOME" -> Icons.Default.Home; "ONLINE" -> Icons.Default.Cloud; "TRACKS" -> Icons.Default.MusicNote; "ALBUMS" -> Icons.Default.Album; "PLAYLISTS" -> Icons.Default.QueueMusic; "ARTISTS" -> Icons.Default.MusicNote; "GENRES" -> Icons.Default.MusicNote; "FOLDERS" -> Icons.Default.Folder; "RECENT" -> Icons.Default.MusicNote; "INSIGHTS" -> Icons.Default.Info; else -> Icons.Default.Favorite }, contentDescription = null, tint = if (active) Color.White else subtle, modifier = Modifier.size(17.dp))
+                                    Icon(when (label) { "HOME" -> Icons.Default.Home; "TRACKS" -> Icons.Default.MusicNote; "ALBUMS" -> Icons.Default.Album; "PLAYLISTS" -> Icons.Default.QueueMusic; "ARTISTS" -> Icons.Default.MusicNote; "GENRES" -> Icons.Default.MusicNote; "FOLDERS" -> Icons.Default.Folder; "RECENT" -> Icons.Default.MusicNote; "INSIGHTS" -> Icons.Default.Info; else -> Icons.Default.Favorite }, contentDescription = null, tint = if (active) Color.White else subtle, modifier = Modifier.size(17.dp))
                                     Text(if (label == "FAVORITES") "Saved" else label.lowercase().replaceFirstChar { it.uppercase() }, color = if (active) Color.White else subtle, fontSize = 9.sp, fontWeight = if (active) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
                                 }
                             }
