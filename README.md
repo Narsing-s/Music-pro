@@ -132,6 +132,10 @@ Music Pro reads audio metadata from your device's media collection and stores ap
 
 Grant only the Android permissions needed for the features you use. Do not include private audio, personal listening history, or sensitive device details in public bug reports.
 
+## 🧭 Advanced modernization plan
+
+Want to know what is still worth improving? See the [**Advanced Modernization Roadmap**](docs/ADVANCED_MODERNIZATION_ROADMAP.md) for prioritized reliability checks, responsive UI/accessibility polish, optional advanced features, and a release checklist. It is intentionally designed to preserve the current screens and working playback controls.
+
 ## 🧪 Project status
 
 Music Pro is actively developed. The [Android APK workflow](https://github.com/Narsing-s/Music-pro/actions/workflows/android-apk.yml) runs the configured unit-test task and builds a debug APK. Media permissions, playback, background behavior, widgets, and screen layouts should still be checked on a physical device after changes. Production signing and a signed release APK/AAB are separate from the debug build.
