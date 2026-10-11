@@ -12,10 +12,6 @@ android {
         targetSdk = 35
         versionCode = 8
         versionName = "0.1.1"
-        val jamendoClientId = providers.gradleProperty("JAMENDO_CLIENT_ID")
-            .orElse(providers.environmentVariable("JAMENDO_CLIENT_ID"))
-            .getOrElse("")
-        buildConfigField("String", "JAMENDO_CLIENT_ID", "\"$jamendoClientId\"")
     }
     buildFeatures {
         compose = true
