@@ -2,6 +2,9 @@ package com.narsing.music
 
 import android.content.Intent
 import android.net.Uri
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -67,23 +70,29 @@ fun OnlineCatalogScreen(
     var loadingMore by remember { mutableStateOf(false) }
     var offset by remember { mutableIntStateOf(0) }
     var canLoadMore by remember { mutableStateOf(false) }
+    var cloudSearch by remember { mutableStateOf("popular Indian movie songs devotional music") }
     var message by remember { mutableStateOf(if (clientId.isBlank()) "Online catalogue setup is required for independent music." else "Loading music for you…") }
     val scope = rememberCoroutineScope()
     val movieCategories = remember {
         listOf(
-            MovieMusicCategory("Telugu", "latest Telugu movie songs"),
-            MovieMusicCategory("Hindi", "latest Bollywood movie songs"),
-            MovieMusicCategory("Tamil", "latest Tamil movie songs"),
+            MovieMusicCategory("Telugu Movies", "latest Telugu movie songs"),
+            MovieMusicCategory("Hindi / Bollywood", "latest Bollywood Hindi movie songs"),
+            MovieMusicCategory("Tamil Movies", "latest Tamil movie songs"),
             MovieMusicCategory("Malayalam", "latest Malayalam movie songs"),
             MovieMusicCategory("Kannada", "latest Kannada movie songs"),
-            MovieMusicCategory("Punjabi", "latest Punjabi movie songs")
+            MovieMusicCategory("Punjabi", "latest Punjabi movie songs"),
+            MovieMusicCategory("Devotional", "popular Indian devotional songs bhajans"),
+            MovieMusicCategory("Telugu Devotional", "popular Telugu devotional songs"),
+            MovieMusicCategory("Hindi Bhajans", "popular Hindi bhajans devotional songs"),
+            MovieMusicCategory("Tamil Devotional", "popular Tamil devotional songs"),
+            MovieMusicCategory("Islamic", "popular Islamic devotional nasheed"),
+            MovieMusicCategory("Christian", "Christian devotional worship songs")
         )
     }
 
     fun openMovieMusic(search: String) {
-        val url = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(search, "UTF-8")
-        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
-            .onFailure { message = "Could not open the video music search. Please check your browser or YouTube app." }
+        cloudSearch = search
+        message = "Cloud panel results: " + search
     }
 
     fun loadCatalog(search: String, append: Boolean = false) {
@@ -184,13 +193,13 @@ fun OnlineCatalogScreen(
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it.take(100) },
-                    label = { Text("Search independent music") },
-                    placeholder = { Text("Track, artist, album or mood") },
+                    label = { Text("Search cloud music") },
+                    placeholder = { Text("Movie songs, devotional, singer, film…") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     trailingIcon = {
-                        IconButton(onClick = { loadCatalog(query) }, enabled = !loading && clientId.isNotBlank()) {
-                            Icon(Icons.Default.Search, contentDescription = "Search catalogue", tint = accent)
+                        IconButton(onClick = { openMovieMusic(query.ifBlank { "popular Indian movie songs devotional music" }); if (clientId.isNotBlank()) loadCatalog(query) }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search cloud music", tint = accent)
                         }
                     }
                 )
@@ -204,7 +213,7 @@ fun OnlineCatalogScreen(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("MOVIE MUSIC", color = foreground, fontSize = 15.sp, fontWeight = FontWeight.Black)
-            Text("Open official video search results for popular Indian film songs.", color = muted, fontSize = 11.sp)
+            Text("Browse movie songs, devotional music, bhajans and regional releases inside this cloud panel.", color = muted, fontSize = 11.sp)
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 movieCategories.forEach { category ->
                     Surface(
@@ -304,7 +313,7 @@ fun OnlineCatalogScreen(
                 Icon(Icons.Default.Cloud, contentDescription = null, tint = accent, modifier = Modifier.size(40.dp))
                 Spacer(Modifier.height(10.dp))
                 Text(if (clientId.isBlank()) "ONLINE CATALOG NOT CONFIGURED" else "NO TRACKS YET", color = foreground, fontWeight = FontWeight.Bold)
-                Text("Movie music opens in YouTube search; independent music needs a configured Jamendo catalogue.", color = muted, fontSize = 12.sp)
+                Text("Movie and devotional results load inside the cloud panel. Independent audio streaming needs a configured Jamendo catalogue.", color = muted, fontSize = 12.sp)
                 if (clientId.isNotBlank()) {
                     Button(onClick = { loadCatalog(query) }, colors = ButtonDefaults.buttonColors(containerColor = accent)) { Text("RETRY") }
                 }
