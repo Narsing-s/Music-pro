@@ -2,9 +2,6 @@ package com.narsing.music
 
 import android.content.Intent
 import android.net.Uri
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -15,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -90,7 +86,9 @@ fun OnlineCatalogScreen(
 
     fun openMovieMusic(search: String) {
         cloudSearch = search
-        message = "Cloud panel results: " + search
+        query = search
+        message = if (clientId.isBlank()) "Configure the audio catalogue to load playable tracks for this category." else "Searching playable tracks for: $search"
+        if (clientId.isNotBlank()) loadCatalog(search)
     }
 
     fun loadCatalog(search: String, append: Boolean = false) {
@@ -196,7 +194,7 @@ fun OnlineCatalogScreen(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     trailingIcon = {
-                        IconButton(onClick = { openMovieMusic(query.ifBlank { "popular Indian movie songs devotional music" }); if (clientId.isNotBlank()) loadCatalog(query) }) {
+                        IconButton(onClick = { openMovieMusic(query.ifBlank { "popular Indian music" }) }) {
                             Icon(Icons.Default.Search, contentDescription = "Search cloud music", tint = accent)
                         }
                     }
@@ -211,7 +209,7 @@ fun OnlineCatalogScreen(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("MOVIE & DEVOTIONAL CLOUD", color = foreground, fontSize = 15.sp, fontWeight = FontWeight.Black)
-            Text("Browse movie songs, devotional music, bhajans and regional releases inside this cloud panel.", color = muted, fontSize = 11.sp)
+            Text("Choose a category to search the playable catalogue. Available songs depend on the provider’s licensed collection.", color = muted, fontSize = 11.sp)
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 movieCategories.forEach { category ->
                     Surface(
@@ -234,29 +232,10 @@ fun OnlineCatalogScreen(
         }
 
         Surface(color = panel, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("CLOUD RESULTS • " + cloudSearch, color = foreground, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                AndroidView(
-                    modifier = Modifier.fillMaxWidth().height(270.dp),
-                    factory = { ctx ->
-                        WebView(ctx).apply {
-                            settings.javaScriptEnabled = true
-                            settings.domStorageEnabled = true
-                            settings.mediaPlaybackRequiresUserGesture = true
-                            webViewClient = WebViewClient()
-                            val target = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8")
-                            setTag(target)
-                            loadUrl(target)
-                        }
-                    },
-                    update = { view ->
-                        val target = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8")
-                        if (view.getTag() != target) {
-                            view.setTag(target)
-                            view.loadUrl(target)
-                        }
-                    }
-                )
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text("PLAYABLE CATALOGUE", color = foreground, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(cloudSearch, color = accent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                Text("Tap a category or search above to find tracks available for direct playback in Music Pro. No YouTube page is embedded.", color = muted, fontSize = 11.sp)
             }
         }
 
@@ -320,7 +299,7 @@ fun OnlineCatalogScreen(
                 Icon(Icons.Default.Cloud, contentDescription = null, tint = accent, modifier = Modifier.size(40.dp))
                 Spacer(Modifier.height(10.dp))
                 Text(if (clientId.isBlank()) "ONLINE CATALOG NOT CONFIGURED" else "NO TRACKS YET", color = foreground, fontWeight = FontWeight.Bold)
-                Text("Movie and devotional results load inside the cloud panel. Independent audio streaming needs a configured Jamendo catalogue.", color = muted, fontSize = 12.sp)
+                Text("Search results show playable tracks from the configured independent catalogue. Commercial film songs require a provider licensed to distribute them.", color = muted, fontSize = 12.sp)
                 if (clientId.isNotBlank()) {
                     Button(onClick = { loadCatalog(query) }, colors = ButtonDefaults.buttonColors(containerColor = accent)) { Text("RETRY") }
                 }
