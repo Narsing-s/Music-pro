@@ -74,22 +74,9 @@ Music Pro brings your on-device audio into a focused listening experience with a
   </tr>
 </table>
 
-## 🌐 Online discovery + offline library
+## 🎵 Offline-only music library
 
-Music Pro includes a native discovery screen with regional search categories, track artwork, artist names, and in-app playback for audio tracks returned by the configured Jamendo catalogue. Search terms are intentionally short (for example, **Telugu**, **Telugu devotional**, **Tamil**, or **Hindi bhajan**) to improve matching against track metadata. The local library and offline playback remain available under Home and the other library tabs.
-
-### One-time publisher setup
-
-1. Create an application in the [Jamendo developer portal](https://developer.jamendo.com/) and obtain a client ID.
-2. Open this repository's **Settings → Secrets and variables → Actions → New repository secret**.
-3. Add the secret named `JAMENDO_CLIENT_ID` with the publisher's client ID.
-4. Run the **Android APK** workflow again and install that new APK.
-
-The ID is injected at build time. If the secret is absent, the app shows a publisher-configuration message. Online availability depends on Jamendo's API, internet access, and the app configuration.
-
-**Important catalogue limitation:** Jamendo is an independent-music catalogue; it does not provide a guaranteed collection of popular Telugu cinema tracks, Telugu chart hits, or mainstream Bollywood/Tamil movie songs. Category names are search filters, not promises that those songs exist in the provider. This change improves regional search matching but cannot add missing licensed recordings. To stream mainstream film songs directly inside Music Pro, a provider must offer an authorized playback API/SDK and the app must follow its licensing, authentication, and playback rules. Music Pro does not scrape copyrighted audio or route users to YouTube as a substitute for direct audio playback.
-
-Online tracks are not automatically available offline; local files and existing local playlists remain available without internet.
+Music Pro plays audio files already stored on your Android device. The online catalogue, cloud music discovery, streaming playback, provider configuration, and related network dependency have been removed. No account, catalogue API key, or internet connection is needed for local playback. Scan your device library and enjoy your own music, including Telugu songs and devotional tracks when those audio files are present on your device.
 
 ## 🏠 Home, without the clutter
 
