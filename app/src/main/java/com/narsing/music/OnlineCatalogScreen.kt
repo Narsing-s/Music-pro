@@ -217,7 +217,11 @@ fun OnlineCatalogScreen(
                     Surface(
                         color = panel,
                         shape = RoundedCornerShape(14.dp),
-                        modifier = Modifier.clickable { openMovieMusic(category.search) }
+                        modifier = Modifier.clickable {
+                            query = category.search
+                            openMovieMusic(category.search)
+                            if (clientId.isNotBlank()) loadCatalog(category.search)
+                        }
                     ) {
                         Row(Modifier.padding(horizontal = 13.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(category.label, color = foreground, fontSize = 12.sp, fontWeight = FontWeight.Bold)
@@ -240,12 +244,17 @@ fun OnlineCatalogScreen(
                             settings.domStorageEnabled = true
                             settings.mediaPlaybackRequiresUserGesture = true
                             webViewClient = WebViewClient()
-                            loadUrl("https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8"))
+                            val target = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8")
+                            setTag(R.id.online_cloud_search_url, target)
+                            loadUrl(target)
                         }
                     },
                     update = { view ->
                         val target = "https://www.youtube.com/results?search_query=" + URLEncoder.encode(cloudSearch, "UTF-8")
-                        if (view.url != target) view.loadUrl(target)
+                        if (view.getTag(R.id.online_cloud_search_url) != target) {
+                            view.setTag(R.id.online_cloud_search_url, target)
+                            view.loadUrl(target)
+                        }
                     }
                 )
             }
