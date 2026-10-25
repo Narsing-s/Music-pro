@@ -134,7 +134,8 @@ class MainActivity : ComponentActivity() {
                 hasPermission = granted
                 if (granted) refreshLibrary()
             }
-            MaterialTheme(colorScheme = darkColorScheme(primary = Accent, background = Ink, surface = Panel, onBackground = Paper, onSurface = Paper)) {
+            val systemUsesDarkColors = isSystemInDarkTheme()
+            MaterialTheme(colorScheme = if (systemUsesDarkColors) darkColorScheme(primary = Accent, background = Ink, surface = Panel, onBackground = Paper, onSurface = Paper) else lightColorScheme(primary = Accent, background = Color(0xFFF4F1E8), surface = Color(0xFFF0ECE2), onBackground = Ink, onSurface = Ink)) {
                 LaunchedEffect(Unit) {
                     if (!hasPermission) permissionLauncher.launch(permission) else refreshLibrary()
                     connectController()
@@ -575,7 +576,7 @@ private fun MusicHome(
         screenWidthDp < 600 -> 18.dp
         else -> 24.dp
     }
-    val compactHeight = screenHeightDp < 700
+    val compactHeight = screenHeightDp < 700 || screenConfig.fontScale >= 1.3f
     val systemDarkTheme = isSystemInDarkTheme()
     val effectiveTheme = when (theme) { "SYSTEM" -> if (systemDarkTheme) "DARK" else "LIGHT"; else -> theme }
     val bg = when { effectiveTheme == "LIGHT" -> Color(0xFFF4F1E8); theme == "CUSTOM" -> Color(0xFF17111F); else -> Ink }
@@ -688,7 +689,7 @@ private fun MusicHome(
                     Triple("PLAYER", if (playing) "PLAYING" else "OPEN", "NOW PLAYING")
                 ).forEach { item ->
                     Surface(
-                        modifier = Modifier.weight(1f).height(92.dp).clickable {
+                        modifier = Modifier.weight(1f).heightIn(min = 92.dp).clickable {
                             tab = item.third
                             showFavorites = item.third == "FAVORITES"
                         },
