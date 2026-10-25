@@ -612,7 +612,7 @@ private fun MusicHome(
                         }
                     }
                 }
-                if (screenWidthDp >= 360) {
+                if (screenWidthDp >= 400) {
                     Box {
                         TextButton(onClick = { fontMenuExpanded = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) { Text("Aa", color = fg, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
                         DropdownMenu(expanded = fontMenuExpanded, onDismissRequest = { fontMenuExpanded = false }) {
