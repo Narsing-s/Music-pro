@@ -10,10 +10,11 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal">
-        <View
+        <TextView
             android:layout_width="3dp"
             android:layout_height="34dp"
-            android:background="#E84B35" />
+            android:background="#E84B35"
+            android:contentDescription="Music Pro accent" />
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
