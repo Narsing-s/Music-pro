@@ -26,6 +26,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -308,7 +309,7 @@ private fun MusicHome(
     var tab by remember { mutableStateOf("HOME") }
     var query by remember { mutableStateOf("") }
     var durationFilter by remember { mutableStateOf("ALL") }
-    var theme by remember { mutableStateOf("DARK") }
+    var theme by remember { mutableStateOf("SYSTEM") }
     var showFavorites by remember { mutableStateOf(false) }
     var favorites by remember { mutableStateOf(setOf<Long>()) }
     var shuffle by remember { mutableStateOf(false) }
@@ -319,6 +320,7 @@ private fun MusicHome(
     var sleepTimerMinutes by remember { mutableIntStateOf(0) }
     var sleepMenuExpanded by remember { mutableStateOf(false) }
     var showEqualizerDialog by remember { mutableStateOf(false) }
+    var showDuplicatesDialog by remember { mutableStateOf(false) }
     var fontMenuExpanded by remember { mutableStateOf(false) }
     var fontChoice by remember { mutableStateOf("SANS") }
     var equalizerLevels by remember { mutableStateOf(listOf(0f, 0f, 0f, 0f, 0f)) }
@@ -364,6 +366,7 @@ private fun MusicHome(
     var activeSessionListenMs by remember(selectedIndex) { mutableLongStateOf(0L) }
     var activeSessionCounted by remember(selectedIndex) { mutableStateOf(false) }
     val insightRows = remember(songs, insightRefreshVersion, insightPeriod) { ListeningInsightsStore.snapshotForPeriod(context, songs, insightPeriod) }
+    val duplicateGroups = remember(songs) { songs.groupBy { it.title.trim().lowercase() to it.artist.trim().lowercase() }.values.filter { it.size > 1 }.sortedByDescending { it.size } }
 
     val artworkPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { selectedUri ->
         val targetKey = artworkTargetKey
@@ -459,7 +462,7 @@ private fun MusicHome(
     // Keep personal UI preferences on-device. No library files or playback data are moved.
     LaunchedEffect(Unit) {
         val prefs = context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE)
-        theme = prefs.getString("theme", "DARK") ?: "DARK"
+        theme = prefs.getString("theme", "SYSTEM") ?: "SYSTEM"
         fontChoice = prefs.getString("font_choice", "SANS") ?: "SANS"
         playbackSpeed = prefs.getFloat("playback_speed", 1f).coerceIn(0.5f, 2f)
         equalizerLevels = (prefs.getString("equalizer_levels", "0,0,0,0,0") ?: "0,0,0,0,0").split(",").mapNotNull { it.toFloatOrNull() }.take(5).let { values -> (values + List((5 - values.size).coerceAtLeast(0)) { 0f }).take(5) }
@@ -573,8 +576,10 @@ private fun MusicHome(
         else -> 24.dp
     }
     val compactHeight = screenHeightDp < 700
-    val bg = when (theme) { "LIGHT" -> Color(0xFFF4F1E8); "CUSTOM" -> Color(0xFF17111F); else -> Ink }
-    val fg = if (theme == "LIGHT") Ink else Paper
+    val systemDarkTheme = isSystemInDarkTheme()
+    val effectiveTheme = when (theme) { "SYSTEM" -> if (systemDarkTheme) "DARK" else "LIGHT"; else -> theme }
+    val bg = when { effectiveTheme == "LIGHT" -> Color(0xFFF4F1E8); theme == "CUSTOM" -> Color(0xFF17111F); else -> Ink }
+    val fg = if (effectiveTheme == "LIGHT") Ink else Paper
     val subtle = if (theme == "LIGHT") Color(0xFF69665F) else Muted
     val sourceSongs = when (tab) {
         "RECENT" -> recentIds.mapNotNull { id -> songs.find { it.id == id } }
@@ -704,14 +709,17 @@ private fun MusicHome(
             if (tab == "HOME" && hasPermission) {
                 Column(Modifier.fillMaxWidth().weight(1f)) {
                     Text("YOUR SOUNDTRACK", color = fg, fontSize = 22.sp, fontWeight = FontWeight.Black)
+                    Text("Theme: ${if (theme == "SYSTEM") "System default" else theme.lowercase().replaceFirstChar { it.uppercase() }}", color = subtle, fontSize = 11.sp)
                     Text("Your music, your mood.", color = subtle, fontSize = 13.sp)
                     Spacer(Modifier.height(14.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        listOf("DARK", "LIGHT", "CUSTOM").forEach { mode ->
+                        listOf("SYSTEM", "DARK", "LIGHT", "CUSTOM").forEach { mode ->
                             FilterChip(selected = theme == mode, onClick = { theme = mode }, label = { Text(mode) }, colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Accent, selectedLabelColor = Color.White))
                         }
                     }
                     Spacer(Modifier.height(12.dp))
+                    OutlinedButton(onClick = { showDuplicatesDialog = true }, modifier = Modifier.fillMaxWidth(), contentPadding = PaddingValues(vertical = 9.dp)) { Text("FIND DUPLICATE TRACKS · ${duplicateGroups.sumOf { it.size }} FILES IN ${duplicateGroups.size} GROUPS", maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    Spacer(Modifier.height(8.dp))
                     val quickListenIndices = songs.indices.filter { songs[it].durationMs in 1L..179_999L }
                     val longSessionIndices = songs.indices.filter { songs[it].durationMs > 360_000L }
                     Surface(
@@ -1715,6 +1723,30 @@ private fun MusicHome(
             }
         )
     }
+    if (showDuplicatesDialog) AlertDialog(
+        onDismissRequest = { showDuplicatesDialog = false },
+        title = { Text("Duplicate track finder") },
+        text = {
+            if (duplicateGroups.isEmpty()) {
+                Text("No likely duplicates found. Tracks are compared by title and artist; files with different metadata may not be grouped.")
+            } else {
+                Column(Modifier.heightIn(max = 380.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("${duplicateGroups.size} groups found using matching title and artist. Review each group before deleting anything.", color = Muted, fontSize = 12.sp)
+                    duplicateGroups.forEach { group ->
+                        Column(Modifier.fillMaxWidth().background(Panel, RoundedCornerShape(10.dp)).padding(10.dp)) {
+                            Text(group.first().title, color = Paper, fontWeight = FontWeight.Bold)
+                            Text(group.first().artist, color = Muted, fontSize = 12.sp)
+                            group.forEachIndexed { index, song ->
+                                Text("${index + 1}. ${song.album} · ${song.durationMs / 1000}s", color = Paper, fontSize = 12.sp, modifier = Modifier.padding(top = 3.dp))
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { showDuplicatesDialog = false }) { Text("Done") } },
+        dismissButton = { TextButton(onClick = { showDuplicatesDialog = false; tab = "TRACKS"; query = "" }) { Text("Open library") } }
+    )
     if (showEqualizerDialog) AlertDialog(
         onDismissRequest = { showEqualizerDialog = false },
         title = { Text("5-band equalizer") },
