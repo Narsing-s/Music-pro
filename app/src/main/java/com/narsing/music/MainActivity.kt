@@ -973,6 +973,35 @@ private fun MusicHome(
                             Text(if (favoriteTrackIndices.isNotEmpty()) "${favoriteTrackIndices.size} saved tracks • shuffled for you" else "Save songs with the heart icon to build your mix", color = subtle, fontSize = 11.sp)
                         }
                     }
+                    val repeatRotationIndices = insightRows
+                        .filter { it.playCount > 0 || it.listenedMs > 0L }
+                        .sortedWith(compareByDescending<ListeningInsight> { it.playCount }.thenByDescending { it.listenedMs })
+                        .mapNotNull { insight -> songs.indexOfFirst { it.id == insight.songId }.takeIf { it >= 0 } }
+                        .take(20)
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = {
+                            if (repeatRotationIndices.isNotEmpty()) {
+                                query = ""
+                                tab = "TRACKS"
+                                showFavorites = false
+                                activePlaylist = null
+                                onPlayCollection(repeatRotationIndices, true)
+                            } else {
+                                tab = "INSIGHTS"
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        contentPadding = PaddingValues(vertical = 12.dp)
+                    ) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = Accent)
+                        Spacer(Modifier.width(8.dp))
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Text("YOUR REPEAT ROTATION", color = fg, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+                            Text(if (repeatRotationIndices.isNotEmpty()) "${repeatRotationIndices.size} tracks ranked by your local listening history" else "Play tracks for 30 seconds to build a personal mix", color = subtle, fontSize = 11.sp)
+                        }
+                    }
                     Spacer(Modifier.height(14.dp))
                     if (selectedIndex >= 0 && songs.getOrNull(selectedIndex) != null) {
                         val currentSong = songs[selectedIndex]
@@ -1753,6 +1782,28 @@ private fun MusicHome(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Adjust the sound while music is playing. Some devices or audio routes may not expose a compatible equalizer session.", color = Muted, fontSize = 12.sp)
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf(
+                        "Flat" to listOf(0f, 0f, 0f, 0f, 0f),
+                        "Bass" to listOf(6f, 4f, 0f, -2f, -3f),
+                        "Vocal" to listOf(-2f, 1f, 4f, 3f, 0f),
+                        "Treble" to listOf(-3f, -2f, 0f, 3f, 6f)
+                    ).forEach { (presetName, presetLevels) ->
+                        OutlinedButton(
+                            onClick = {
+                                equalizerLevels = presetLevels
+                                context.getSharedPreferences("music_pro_preferences", Context.MODE_PRIVATE).edit()
+                                    .putString("equalizer_levels", presetLevels.joinToString(",")).apply()
+                                presetLevels.forEachIndexed { band, value ->
+                                    context.sendBroadcast(Intent(PlaybackService.ACTION_EQUALIZER).setPackage(context.packageName)
+                                        .putExtra(PlaybackService.EXTRA_BAND, band)
+                                        .putExtra(PlaybackService.EXTRA_LEVEL, (value * 100f).toInt()))
+                                }
+                            },
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        ) { Text(presetName) }
+                    }
+                }
                 listOf("60 Hz", "230 Hz", "910 Hz", "3.6 kHz", "14 kHz").forEachIndexed { band, label ->
                     Column {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
