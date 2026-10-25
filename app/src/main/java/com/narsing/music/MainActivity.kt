@@ -77,6 +77,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.AsyncImage
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
@@ -562,6 +563,16 @@ private fun MusicHome(
         }
     }
 
+    val screenConfig = LocalConfiguration.current
+    val screenWidthDp = screenConfig.screenWidthDp
+    val screenHeightDp = screenConfig.screenHeightDp
+    val horizontalPadding = when {
+        screenWidthDp < 360 -> 10.dp
+        screenWidthDp < 400 -> 14.dp
+        screenWidthDp < 600 -> 18.dp
+        else -> 24.dp
+    }
+    val compactHeight = screenHeightDp < 700
     val bg = when (theme) { "LIGHT" -> Color(0xFFF4F1E8); "CUSTOM" -> Color(0xFF17111F); else -> Ink }
     val fg = if (theme == "LIGHT") Ink else Paper
     val subtle = if (theme == "LIGHT") Color(0xFF69665F) else Muted
@@ -582,12 +593,12 @@ private fun MusicHome(
         else -> filtered
     }
     Surface(Modifier.fillMaxSize(), color = bg) {
-        Column(Modifier.fillMaxSize().padding(horizontal = 22.dp)) {
+        Column(Modifier.fillMaxSize().padding(horizontal = horizontalPadding)) {
             if (tab != "NOW PLAYING") {
-            Row(Modifier.fillMaxWidth().padding(top = if (tab == "HOME") 24.dp else 8.dp, bottom = if (tab == "HOME") 18.dp else 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(top = if (tab == "HOME") { if (compactHeight) 12.dp else 24.dp } else 8.dp, bottom = if (tab == "HOME") { if (compactHeight) 10.dp else 18.dp } else 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("MUSIC PRO", color = Accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
-                    Text(if (tab == "HOME") "MUSIC PRO" else when (tab) { "TRACKS" -> "All songs"; "ALBUMS" -> "Albums"; "ARTISTS" -> "Artists"; "PLAYLISTS" -> "Playlists"; "FAVORITES" -> "Favorites"; "RECENT" -> "Recently played"; else -> tab.lowercase().replaceFirstChar { it.uppercase() } }, color = fg, fontSize = if (tab == "HOME") 34.sp else 25.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.6).sp)
+                    Text(if (tab == "HOME") "MUSIC PRO" else when (tab) { "TRACKS" -> "All songs"; "ALBUMS" -> "Albums"; "ARTISTS" -> "Artists"; "PLAYLISTS" -> "Playlists"; "FAVORITES" -> "Favorites"; "RECENT" -> "Recently played"; else -> tab.lowercase().replaceFirstChar { it.uppercase() } }, color = fg, fontSize = if (tab == "HOME") { when { screenWidthDp < 360 -> 27.sp; screenWidthDp < 400 -> 30.sp; else -> 34.sp } } else if (screenWidthDp < 360) 22.sp else 25.sp, fontWeight = FontWeight.Black, letterSpacing = (-0.6).sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Box {
                     IconButton(onClick = { sleepMenuExpanded = true }) {
