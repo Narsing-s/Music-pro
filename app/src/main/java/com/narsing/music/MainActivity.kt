@@ -198,7 +198,7 @@ class MainActivity : ComponentActivity() {
                         }
                     })
                 }
-            }, mainExecutor)
+            }, ContextCompat.getMainExecutor(this))
         }
     }
 
