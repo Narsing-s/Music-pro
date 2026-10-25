@@ -127,7 +127,7 @@ class PlaybackService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<MediaItem>> {
             val song = runCatching { MusicRepository(this@PlaybackService).loadSongs().firstOrNull { it.uri.toString() == mediaId || it.id.toString() == mediaId } }.getOrNull()
             return if (song != null) Futures.immediateFuture(LibraryResult.ofItem(song.toLibraryMediaItem(), null))
-            else Futures.immediateFuture(LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE))
+            else Futures.immediateFuture(LibraryResult.ofError(androidx.media3.session.SessionError.ERROR_BAD_VALUE))
         }
     }
 
