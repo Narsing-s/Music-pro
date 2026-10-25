@@ -7,6 +7,8 @@ import android.content.IntentFilter
 import android.media.audiofx.Equalizer
 import android.os.Bundle
 import androidx.core.content.ContextCompat
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -20,6 +22,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 
+@OptIn(markerClass = [UnstableApi::class])
 class PlaybackService : MediaLibraryService() {
     private var mediaSession: MediaLibrarySession? = null
     private var player: ExoPlayer? = null
