@@ -702,7 +702,7 @@ private fun MusicHome(
             Spacer(Modifier.height(4.dp))
             }
             if (tab == "HOME" && hasPermission) {
-                Column(Modifier.fillMaxWidth().weight(1f)) {
+                Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
                     Text("YOUR SOUNDTRACK", color = fg, fontSize = 22.sp, fontWeight = FontWeight.Black)
                     Text("Your music, your mood.", color = subtle, fontSize = 13.sp)
                     Spacer(Modifier.height(14.dp))
@@ -1000,17 +1000,18 @@ private fun MusicHome(
                     if (songs.isEmpty()) {
                         EmptyState("YOUR LIBRARY IS EMPTY", "Allow audio access and add music to your phone.", "RESCAN LIBRARY", onRefresh)
                     } else {
-                        LazyColumn(contentPadding = PaddingValues(bottom = 12.dp)) {
-                            itemsIndexed(recentIds.mapNotNull { id -> songs.firstOrNull { it.id == id } }.ifEmpty { songs }.take(8), key = { _, song -> song.id }) { _, song ->
+                        val homeRecentSongs = recentIds.mapNotNull { id -> songs.firstOrNull { it.id == id } }.ifEmpty { songs }.take(8)
+                        Column {
+                            homeRecentSongs.forEach { song ->
                                 val ix = songs.indexOfFirst { it.id == song.id }
                                 Row(Modifier.fillMaxWidth().clickable { tab = "NOW PLAYING"; onPlay(ix) }.padding(vertical = 9.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Surface(Modifier.size(58.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
-                                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Album, null, tint = Accent, modifier = Modifier.size(28.dp)) }
+                                    Surface(Modifier.size(52.dp), color = if (theme == "LIGHT") Color(0xFFE5E0D4) else Panel, shape = RoundedCornerShape(12.dp)) {
+                                        Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Album, null, tint = Accent, modifier = Modifier.size(26.dp)) }
                                     }
                                     Spacer(Modifier.width(12.dp))
                                     Column(Modifier.weight(1f)) {
                                         Text(song.title, color = fg, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        Text(song.artist, color = subtle, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        Text(song.artist, color = subtle, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
                                     IconButton(onClick = { favorites = if (song.id in favorites) favorites - song.id else favorites + song.id }) {
                                         Icon(if (song.id in favorites) Icons.Default.Favorite else Icons.Default.FavoriteBorder, null, tint = if (song.id in favorites) Accent else subtle)
