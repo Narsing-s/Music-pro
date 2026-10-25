@@ -1024,7 +1024,7 @@ private fun MusicHome(
             } else if (!hasPermission) {
                 EmptyState("MUSIC ACCESS NEEDED", "Allow audio access to scan tracks stored on this phone.", "GRANT ACCESS", onGrant)
             } else if (tab == "NOW PLAYING") {
-                NowPlaying(title, artist, songs.getOrNull(selectedIndex)?.album ?: "ONLINE CATALOG", playing, fg, subtle, Accent, artworkUris["track_${songs.getOrNull(selectedIndex)?.id}"], { tab = "HOME" }, { songs.getOrNull(selectedIndex)?.let { artworkTargetKey = "track_${it.id}"; artworkTargetLabel = it.title; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onShareTrack = {
+                NowPlaying(title, artist, songs.getOrNull(selectedIndex)?.album ?: "ONLINE CATALOG", playing, fg, subtle, Accent, screenWidthDp, compactHeight, artworkUris["track_${songs.getOrNull(selectedIndex)?.id}"], { tab = "HOME" }, { songs.getOrNull(selectedIndex)?.let { artworkTargetKey = "track_${it.id}"; artworkTargetLabel = it.title; artworkPickerLauncher.launch(arrayOf("image/*")) } }, onShareTrack = {
                     val currentSong = songs.getOrNull(selectedIndex)
                     if (currentSong != null) {
                         val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -1757,7 +1757,7 @@ private fun MusicHome(
 }
 
 @Composable
-private fun ColumnScope.NowPlaying(title: String, artist: String, album: String, playing: Boolean, foreground: Color, subtleColor: Color, accentColor: Color, artworkUri: String?, onBack: () -> Unit, onChooseArtwork: () -> Unit, onShareTrack: () -> Unit, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit, onOpenLyrics: () -> Unit, hasLyrics: Boolean, lyricsText: String) {
+private fun ColumnScope.NowPlaying(title: String, artist: String, album: String, playing: Boolean, foreground: Color, subtleColor: Color, accentColor: Color, screenWidthDp: Int, compactHeight: Boolean, artworkUri: String?, onBack: () -> Unit, onChooseArtwork: () -> Unit, onShareTrack: () -> Unit, onToggle: () -> Unit, onNext: () -> Unit, onPrevious: () -> Unit, onShuffle: () -> Unit, onRepeat: () -> Unit, shuffle: Boolean, repeat: Boolean, positionMs: Long, durationMs: Long, onSeek: (Long) -> Unit, playbackSpeed: Float, onSpeedChange: (Float) -> Unit, onOpenQueue: () -> Unit, isFavorite: Boolean, onToggleFavorite: () -> Unit, onOpenLyrics: () -> Unit, hasLyrics: Boolean, lyricsText: String) {
     var speedMenuExpanded by remember { mutableStateOf(false) }
     val recordMotion = rememberInfiniteTransition(label = "vinyl-record")
     val recordRotation = recordMotion.animateFloat(
@@ -1778,7 +1778,7 @@ private fun ColumnScope.NowPlaying(title: String, artist: String, album: String,
         }
         Spacer(Modifier.height(8.dp))
         Box(
-            Modifier.fillMaxWidth().heightIn(max = 320.dp).aspectRatio(1f).padding(4.dp).pointerInput(durationMs) {
+            Modifier.fillMaxWidth().widthIn(max = when { screenWidthDp >= 840 -> 440.dp; screenWidthDp >= 600 -> 380.dp; compactHeight -> 232.dp; else -> 320.dp }).heightIn(max = when { compactHeight -> 232.dp; screenWidthDp >= 600 -> 380.dp; else -> 320.dp }).aspectRatio(1f).padding(4.dp).pointerInput(durationMs) {
                 if (durationMs > 0L) {
                     detectDragGestures(
                         onDragStart = { offset ->
