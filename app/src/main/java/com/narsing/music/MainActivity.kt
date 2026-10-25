@@ -320,6 +320,7 @@ private fun MusicHome(
     var sleepMenuExpanded by remember { mutableStateOf(false) }
     var showEqualizerDialog by remember { mutableStateOf(false) }
     var fontMenuExpanded by remember { mutableStateOf(false) }
+    var compactMoreMenuExpanded by remember { mutableStateOf(false) }
     var fontChoice by remember { mutableStateOf("SANS") }
     var equalizerLevels by remember { mutableStateOf(listOf(0f, 0f, 0f, 0f, 0f)) }
     var playlists by remember { mutableStateOf<Map<String, List<Long>>>(emptyMap()) }
@@ -611,24 +612,51 @@ private fun MusicHome(
                         }
                     }
                 }
-                Box {
-                    TextButton(onClick = { fontMenuExpanded = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) { Text("Aa", color = fg, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                if (screenWidthDp >= 360) {
+                    Box {
+                        TextButton(onClick = { fontMenuExpanded = true }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)) { Text("Aa", color = fg, fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                        DropdownMenu(expanded = fontMenuExpanded, onDismissRequest = { fontMenuExpanded = false }) {
+                            listOf("SANS" to "Sans serif", "SERIF" to "Serif", "MONOSPACE" to "Monospace", "CURSIVE" to "Cursive").forEach { (choice, label) ->
+                                DropdownMenuItem(text = { Text(if (fontChoice == choice) "✓ $label" else label) }, onClick = { fontChoice = choice; onFontChoiceChange(choice); fontMenuExpanded = false })
+                            }
+                        }
+                    }
+                    IconButton(onClick = { showEqualizerDialog = true }) { Icon(Icons.Default.Tune, contentDescription = "Equalizer", tint = if (equalizerLevels.any { it != 0f }) Accent else fg) }
+                    IconButton(onClick = {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "Narsing Music")
+                            putExtra(Intent.EXTRA_TEXT, "🎧 Discover Narsing Music — a modern Android music player for music stored on your phone. Explore the project and try it: https://github.com/Narsing-s/Music-pro")
+                        }
+                        runCatching { context.startActivity(Intent.createChooser(shareIntent, "Share Narsing Music")) }
+                    }) { Icon(Icons.Default.Share, contentDescription = "Share Narsing Music", tint = Accent) }
+                    IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, contentDescription = "Rescan music", tint = fg) }
+                } else {
+                    Box {
+                        IconButton(onClick = { compactMoreMenuExpanded = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "More options", tint = fg)
+                        }
+                        DropdownMenu(expanded = compactMoreMenuExpanded, onDismissRequest = { compactMoreMenuExpanded = false }) {
+                            DropdownMenuItem(text = { Text("Font style") }, onClick = { compactMoreMenuExpanded = false; fontMenuExpanded = true })
+                            DropdownMenuItem(text = { Text("Equalizer") }, onClick = { compactMoreMenuExpanded = false; showEqualizerDialog = true })
+                            DropdownMenuItem(text = { Text("Rescan music") }, onClick = { compactMoreMenuExpanded = false; onRefresh() })
+                            DropdownMenuItem(text = { Text("Share Music Pro") }, onClick = {
+                                compactMoreMenuExpanded = false
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_SUBJECT, "Music Pro")
+                                    putExtra(Intent.EXTRA_TEXT, "Discover Music Pro — a modern Android music player: https://github.com/Narsing-s/Music-pro")
+                                }
+                                runCatching { context.startActivity(Intent.createChooser(shareIntent, "Share Music Pro")) }
+                            })
+                        }
+                    }
                     DropdownMenu(expanded = fontMenuExpanded, onDismissRequest = { fontMenuExpanded = false }) {
                         listOf("SANS" to "Sans serif", "SERIF" to "Serif", "MONOSPACE" to "Monospace", "CURSIVE" to "Cursive").forEach { (choice, label) ->
                             DropdownMenuItem(text = { Text(if (fontChoice == choice) "✓ $label" else label) }, onClick = { fontChoice = choice; onFontChoiceChange(choice); fontMenuExpanded = false })
                         }
                     }
                 }
-                IconButton(onClick = { showEqualizerDialog = true }) { Icon(Icons.Default.Tune, contentDescription = "Equalizer", tint = if (equalizerLevels.any { it != 0f }) Accent else fg) }
-                IconButton(onClick = {
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_SUBJECT, "Narsing Music")
-                        putExtra(Intent.EXTRA_TEXT, "🎧 Discover Narsing Music — a modern Android music player for music stored on your phone. Explore the project and try it: https://github.com/Narsing-s/Music-pro")
-                    }
-                    runCatching { context.startActivity(Intent.createChooser(shareIntent, "Share Narsing Music")) }
-                }) { Icon(Icons.Default.Share, contentDescription = "Share Narsing Music", tint = Accent) }
-                IconButton(onClick = onRefresh) { Icon(Icons.Default.Refresh, contentDescription = "Rescan music", tint = fg) }
             }
             OutlinedTextField(
                 value = query,
